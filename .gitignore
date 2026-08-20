@@ -1,0 +1,7 @@
+# Artifact-tool verification traces are reproducible and can be very large.
+*.xlsx.inspect.ndjson
+
+# Local development noise
+.DS_Store
+__pycache__/
+*.pyc
