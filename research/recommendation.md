@@ -1,5 +1,9 @@
 # Recommendation: build WeldSense, with FormTwin as the no-drama fallback
 
+> **Archived (October 2026):** this was an early recommendation from the
+> project-selection stage. The team chose **ToolLife Policy** (idea 8) instead.
+> For the current project, read [`../PROJECT_EXPLAINED.md`](../PROJECT_EXPLAINED.md).
+
 > **Expansion note (21 August 2026):** the second detailed research pass found two
 > unusually strong new candidates. **MoldRx** now has the cleanest public
 > end-to-end data path, while **PackRecover** has the strongest combination of
