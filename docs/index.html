@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Plain-language explainer of the ToolLife Policy AI in Manufacturing project.">
+<title>ToolLife Policy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one readable column like a shop-floor manual, contents rail on wide screens, spec strips for machine facts */
+:root {
+  --bg: #f6f7f8;
+  --paper: #ffffff;
+  --ink: #1b2228;
+  --muted: #5a6670;
+  --rule: #d8dde2;
+  --steel: #2f4a5c;
+  --accent: #c2410c;
+  --keep: #2f7d4f;
+  --change: #b4321f;
+  --code-bg: #eef1f4;
+  --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --paper: #182026; --ink: #e4e9ed; --muted: #9aa7b1; --rule: #2c3740;
+    --steel: #8fb3c9; --accent: #f08a4b; --keep: #6cc791; --change: #f07a66; --code-bg: #1f2931;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --paper: #182026; --ink: #e4e9ed; --muted: #9aa7b1; --rule: #2c3740;
+  --steel: #8fb3c9; --accent: #f08a4b; --keep: #6cc791; --change: #f07a66; --code-bg: #1f2931;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 17px; line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 40px 80px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 24px 64px; } }
+
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 14px; line-height: 1.4; }
+nav.toc .label { font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; counter-reset: s; }
+nav.toc li { counter-increment: s; display: grid; grid-template-columns: 22px 1fr; }
+nav.toc li::before { content: counter(s); font-family: var(--mono); font-size: 12px; color: var(--muted); padding-top: 1px; }
+nav.toc a { color: var(--ink); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); }
+@media (max-width: 900px) {
+  nav.toc { position: static; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+}
+
+main { min-width: 0; max-width: 70ch; }
+header.hero { padding-bottom: 28px; border-bottom: 2px solid var(--ink); margin-bottom: 8px; }
+.eyebrow { font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: .02em; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(48px, 9vw, 84px); line-height: .95; margin: 10px 0 18px; letter-spacing: -.01em; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.lede { font-size: 20px; line-height: 1.55; margin: 0; }
+.flowstrip { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 22px; font-family: var(--mono); font-size: 13px; }
+.flowstrip span.step { border: 1px solid var(--rule); background: var(--paper); padding: 4px 9px; border-radius: 4px; }
+.flowstrip span.arrow { color: var(--muted); }
+.flowstrip span.keep { border-color: var(--keep); color: var(--keep); font-weight: 500; }
+.flowstrip span.change { border-color: var(--change); color: var(--change); font-weight: 500; }
+
+section { padding-top: 40px; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 34px; line-height: 1.1; margin: 0 0 14px; text-wrap: balance; display: flex; gap: 12px; align-items: baseline; }
+h2 .n { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; flex: none; }
+h3 { font-family: var(--display); font-weight: 600; font-size: 23px; margin: 28px 0 6px; letter-spacing: .01em; text-wrap: balance; }
+p { margin: 0 0 14px; }
+ul, ol.plain { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 5px; }
+strong { font-weight: 700; }
+a { color: var(--steel); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+
+pre.text { font-family: var(--mono); font-size: 13.5px; line-height: 1.5; background: var(--code-bg); border-radius: 6px; padding: 14px 16px; overflow-x: auto; margin: 0 0 18px; color: var(--ink); }
+.diagram { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; margin: 6px 0 20px; overflow-x: auto; }
+.diagram pre.mermaid { margin: 0; background: transparent; text-align: center; }
+
+.spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; margin: 8px 0 20px; }
+.spec div { background: var(--paper); padding: 10px 12px; min-width: 0; }
+.spec .k { display: block; font-family: var(--display); text-transform: uppercase; letter-spacing: .07em; font-size: 13px; color: var(--muted); }
+.spec .v { font-family: var(--mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+
+.tablebox { overflow-x: auto; margin: 6px 0 20px; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: 13px; color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 14px; }
+
+.callout { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; margin: 6px 0 20px; }
+.callout p:last-child { margin-bottom: 0; }
+.callout.note { border-left-color: var(--steel); }
+.dont li { list-style: none; position: relative; }
+.dont { padding-left: 0; }
+.dont li { padding-left: 26px; }
+.dont li::before { content: "✕"; position: absolute; left: 2px; color: var(--change); font-weight: 700; }
+
+dl.words { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 0; }
+dl.words div { border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
+dl.words dt { font-weight: 700; }
+dl.words dd { margin: 2px 0 0; color: var(--muted); }
+footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--muted); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+section { scroll-margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <div class="label">Contents</div>
+  <ol>
+    <li><a href="#summary">The project in one paragraph</a></li>
+    <li><a href="#problem">The factory problem</a></li>
+    <li><a href="#words">Words we need first</a></li>
+    <li><a href="#data">Our data</a></li>
+    <li><a href="#predict">What we predict</a></li>
+    <li><a href="#testing">Learning and fair testing</a></li>
+    <li><a href="#models">The models</a></li>
+    <li><a href="#range">A range, not a number</a></li>
+    <li><a href="#decision">From estimate to decision</a></li>
+    <li><a href="#evaluate">Testing the decisions</a></li>
+    <li><a href="#system">The whole system</a></li>
+    <li><a href="#demo">The demo</a></li>
+    <li><a href="#plan">Next 10 days</a></li>
+    <li><a href="#never">Never claim</a></li>
+    <li><a href="#glossary">Word list</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">AI in Manufacturing · course project · read this first</div>
+  <h1>ToolLife <span>Policy</span></h1>
+  <p class="lede">A system that listens to a CNC milling machine while it cuts, estimates how many more cuts its cutting tool can survive, and recommends whether to keep going or change the tool before the next cut.</p>
+  <div class="flowstrip" aria-label="How the system works">
+    <span class="step">cut finishes</span><span class="arrow">→</span>
+    <span class="step">read vibration + current</span><span class="arrow">→</span>
+    <span class="step">“about 6 cuts left, could be 2–12”</span><span class="arrow">→</span>
+    <span class="step keep">KEEP GOING</span><span class="arrow">or</span>
+    <span class="step change">CHANGE THE CUTTER</span>
+  </div>
+</header>
+
+<p style="margin-top:22px">This page assumes you know school-level maths and science and nothing about machine learning or machining. Every technical word is explained the first time it appears, and there is a word list at the end. Read it top to bottom once; each part builds on the one before.</p>
+
+<section id="summary">
+<h2><span class="n">01</span>The whole project in one paragraph</h2>
+<p>Factories cut metal using machines that hold a small spinning cutting tool. That tool wears down every time it cuts, and eventually it breaks. If you change it too early, you throw away a tool that still had life in it. If you change it too late, it breaks in the middle of a cut, which can ruin the part and stop the machine. Our project listens to the machine while it cuts (how much it shakes, and how much electricity its motors draw), estimates how many more cuts the tool can survive, and then recommends one of two things before the next cut: <strong>keep going</strong> or <strong>change the tool now</strong>.</p>
+<p>That is all ToolLife Policy is. Everything below explains how we do it and how we prove it works.</p>
+</section>
+
+<section id="problem">
+<h2><span class="n">02</span>The factory problem</h2>
+<h3>The machine</h3>
+<p>A <strong>CNC machine</strong> is a machine tool controlled by a computer program. CNC stands for <em>Computer Numerical Control</em>: the program tells the machine exactly where to move, how fast, and how deep to cut.</p>
+<p>Our machine does <strong>milling</strong>. A small cutting tool spins very fast and is pushed into a block of metal. Its sharp edges shave material off, the way a drill bit removes wood, except milling can also cut sideways along a path.</p>
+<pre class="text">CNC milling machine          the big machine that moves everything
+      │
+      ├── holds the workpiece   a block of steel clamped to the table
+      │
+      └── spins the cutter      a small cutting tool, about 10 mm wide
+                 ↓
+          shaves steel off the block</pre>
+<ul>
+  <li>The <strong>workpiece</strong> is the block of metal being shaped.</li>
+  <li>The <strong>cutter</strong> (also called the cutting tool, or just the tool) is the small spinning part that does the cutting. This is what wears out.</li>
+</ul>
+<h3>Why the cutter wears out</h3>
+<p>Every time the cutter's edges hit steel, they rub, heat up and get pushed hard. Tiny bits of the edge wear away or chip off. This gradual damage is called <strong>tool wear</strong>. After enough cutting, an edge snaps or the whole cutter breaks.</p>
+<h3>The two bad choices</h3>
+<ul>
+  <li><strong>Change too early:</strong> you throw away a cutter that could have kept working, and stop the machine for a swap you did not need.</li>
+  <li><strong>Change too late:</strong> the cutter breaks mid-cut. The part may be ruined, the machine stops unexpectedly, and someone has to clean up and restart.</li>
+</ul>
+<p>Think of your phone battery before a trip. Knowing it is at 30% is useful, but it does not tell you what to do. For a ten-minute ride, 30% is fine. For a six-hour journey, you charge it first. Our project works the same way: it estimates the cutter's health, then turns that into a decision.</p>
+<h3>What most workshops do today</h3>
+<p>Most workshops change the cutter after a fixed number of uses, or when an operator notices something wrong. But cutters do not all last the same time. In our data, ordinary cutters lasted anywhere from about <strong>14 to 149 cuts</strong>, and one broke on its very first cut. Set the fixed number low and you waste most cutters; set it high and some break first.</p>
+<p>That spread is why AI is useful here. The signals coming off the machine carry clues about how worn this particular cutter is, and those clues are too noisy and complicated to read by eye. A model can learn to read them.</p>
+</section>
+
+<section id="words">
+<h2><span class="n">03</span>A few words we need first</h2>
+<p><strong>One cut (one cycle).</strong> In our data, the machine runs the same programmed path once around the edge of the steel block. That one trip is one <strong>milling cycle</strong>. During it, the cutter spins thousands of times. One cycle is not the whole life of the cutter, and not one finished product.</p>
+<p><strong>The life of a cutter (a lifecycle).</strong> A new cutter is installed and runs cycle after cycle until it breaks. That whole sequence is one <strong>lifecycle</strong>.</p>
+<div class="diagram"><pre class="mermaid">
+flowchart LR
+    A[New cutter installed] --> B[Cycle 1: survives]
+    B --> C[Cycle 2: survives]
+    C --> D[... many more cycles ...]
+    D --> E[Cycle 49: survives]
+    E --> F[Cycle 50: cutter breaks]
+</pre></div>
+<p><strong>Sensor.</strong> A device that measures something physical and turns it into numbers. We use two kinds:</p>
+<ul>
+  <li><strong>Vibration sensors</strong> (accelerometers) measure how much the machine and spindle shake. A worn or chipped cutter cuts less smoothly, so the shaking changes.</li>
+  <li><strong>Current sensors</strong> measure how much electricity the motors draw. A blunt cutter needs more effort, so the motors pull a different amount of current.</li>
+</ul>
+<p><strong>Signal.</strong> The stream of numbers a sensor produces over time. Plotted, it looks like a wiggly line, much like a sound recording.</p>
+<p><strong>Channel.</strong> One sensor's stream. Our data has 20 channels: 8 vibration and 12 current.</p>
+<p><strong>Sampling rate.</strong> How many readings a sensor takes per second. Our vibration sensors take 25,000 per second (25 kHz); current sensors take 500 per second (0.5 kHz). Vibration is recorded faster because shaking changes very quickly.</p>
+<p>None of this needs a camera. We have no photos or videos of the cutter. The project works entirely by feeling and listening to the machine through these sensors.</p>
+</section>
+
+<section id="data">
+<h2><span class="n">04</span>Our data</h2>
+<h3>Where it comes from</h3>
+<p>We use a public dataset published in April 2025 in the journal <em>Scientific Data</em> by Grzegorz Piecuch and Tomasz Żabiński at Rzeszów University of Technology, Poland. Anyone can download and use it (licence CC BY 4.0). <a href="https://www.nature.com/articles/s41597-025-04923-y">Read the paper</a> · <a href="https://doi.org/10.6084/m9.figshare.28589216">Get the files</a></p>
+<h3>What the researchers did</h3>
+<p>They installed a new cutter in a Haas VF-1 milling machine and ran it cycle after cycle on hardened steel until it broke, recording all 20 sensors during every cycle. Then they did the same with the next cutter, for 14 cutters in total.</p>
+<div class="spec">
+  <div><span class="k">Cutters</span><span class="v">14, two types</span></div>
+  <div><span class="k">Recorded cycles</span><span class="v">968</span></div>
+  <div><span class="k">Sensor channels</span><span class="v">8 vibration + 12 current</span></div>
+  <div><span class="k">Machine</span><span class="v">Haas VF-1</span></div>
+  <div><span class="k">Steel</span><span class="v">42CrMo4, hardened</span></div>
+  <div><span class="k">Spindle speed</span><span class="v">3,200 rpm</span></div>
+  <div><span class="k">Feed speed</span><span class="v">640 mm/min</span></div>
+  <div><span class="k">Cutter width</span><span class="v">10 mm</span></div>
+</div>
+<p>For every cycle we also know exactly how many cycles that cutter had left before it broke.</p>
+<p>The cutters did not all work under identical conditions. The vertical cut depth was 5 or 10 mm and the sideways depth 4.5 or 8 mm, the steel blocks varied slightly in hardness, and the tool holder was 80 or 160 mm long. All of this is recorded alongside each cycle and can be given to our models.</p>
+<h3>The odd cutter</h3>
+<p>One cutter broke during its very first cycle, so it gives no history of slowly wearing out. We use the other <strong>13 cutters</strong> for building and testing, and keep the odd one aside as a separate surprise-failure case. Our system decides after each finished cycle, so it honestly could not have saved a cutter that broke on cycle one, and we will say so.</p>
+<div class="callout note"><p>968 rows sounds like a lot, but it is really <strong>13 life stories</strong>. Rows from the same cutter are closely related, so they are not 968 independent examples. This shapes how we test (section 6).</p></div>
+<h3>Two versions of the same data</h3>
+<p><strong>The raw signals (about 25 GB).</strong> The complete wiggly-line recordings from every sensor in every cycle. Think of this as the full audio recording of a song.</p>
+<p><strong>The summary table (1.8 MB).</strong> The researchers boiled each channel down to six numbers per cycle:</p>
+<ul>
+  <li>smallest reading, largest reading, average reading</li>
+  <li><strong>standard deviation</strong>: how spread out the readings are around the average</li>
+  <li><strong>skewness</strong>: how lopsided the readings are</li>
+  <li><strong>kurtosis</strong>: how spiky the signal is (a few very extreme readings give high kurtosis)</li>
+</ul>
+<p>That gives 20 channels × 6 = <strong>120 numbers per cycle</strong>: a short written description of the song instead of the recording. Each input number given to a model is called a <strong>feature</strong>. So one row reads: “Cutter 3, cycle 40, here are its 120 sensor summaries, here are its cutting settings, and it had 12 cycles left before breaking.”</p>
+</section>
+
+<section id="predict">
+<h2><span class="n">05</span>What we ask the computer to predict</h2>
+<p>After every cycle, we want to know: <strong>how many more cycles can this cutter survive?</strong> That number is the cutter's <strong>Remaining Useful Life (RUL)</strong>, measured in cycles. Here is a cutter that breaks during cycle 50:</p>
+<div class="tablebox"><table>
+  <thead><tr><th class="num">Cycle just finished</th><th>What happened</th><th class="num">Cycles left (RUL)</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td>survived</td><td class="num">49</td></tr>
+    <tr><td class="num">25</td><td>survived</td><td class="num">25</td></tr>
+    <tr><td class="num">45</td><td>survived</td><td class="num">5</td></tr>
+    <tr><td class="num">49</td><td>survived</td><td class="num">1</td></tr>
+    <tr><td class="num">50</td><td>broke</td><td class="num">0</td></tr>
+  </tbody>
+</table></div>
+<p>Because every cutter was run until it broke, we know the true RUL for every row. That is what makes this dataset good for learning. The system makes one prediction after each successful cycle, and the decision is about the very next one:</p>
+<div class="diagram"><pre class="mermaid">
+flowchart LR
+    A[Cycle finishes, cutter survived] --> B[Read that cycle's sensor data]
+    B --> C[Estimate cycles left]
+    C --> D{Run the next cycle?}
+    D -->|Yes| E[KEEP GOING]
+    D -->|No| F[CHANGE THE CUTTER]
+</pre></div>
+</section>
+
+<section id="testing">
+<h2><span class="n">06</span>How a computer learns, and how we test it fairly</h2>
+<h3>Learning from examples</h3>
+<p>A <strong>machine learning model</strong> is a program that learns a pattern from examples instead of being told the rule. We show it many rows where we already know the answer (“these sensor readings, 12 cycles left”) and it adjusts itself until its guesses match the answers as closely as possible. That is <strong>training</strong>. Learning from examples with correct answers is called <strong>supervised learning</strong>; because our answer is a number, it is also called <strong>regression</strong>. Afterwards we give it rows it has never seen and check its guesses. That is <strong>testing</strong>.</p>
+<h3>Why testing must be fair</h3>
+<p>Imagine studying from last year's paper and then getting the same paper in the exam. You would score well without learning anything. Models do the same thing: tested on rows they already saw, or near-copies of them, they look great and it means nothing. This mistake is called <strong>data leakage</strong>.</p>
+<p>Our data has a specific trap. Cycle 40 and cycle 41 of the same cutter look very similar. If we shuffled all 968 rows and split them randomly, the model would train on cycle 40 and be tested on cycle 41, effectively seeing the answer. It might learn to recognise that particular cutter instead of learning what wear looks like.</p>
+<h3>Our fix: hide a whole cutter</h3>
+<ol class="plain">
+  <li>Pick one cutter and hide every one of its cycles.</li>
+  <li>Train the model on the other 12 cutters only.</li>
+  <li>Test it on the hidden cutter.</li>
+  <li>Repeat 13 times, so every cutter gets one turn as the hidden one.</li>
+</ol>
+<div class="diagram"><pre class="mermaid">
+flowchart TD
+    A[13 normal cutters] --> B[Round 1: hide cutter 1, train on the other 12, test on cutter 1]
+    A --> C[Round 2: hide cutter 2, train on the other 12, test on cutter 2]
+    A --> D[... and so on ...]
+    A --> E[Round 13: hide cutter 13, train on the other 12, test on cutter 13]
+    B --> F[Combine the 13 test results]
+    C --> F
+    D --> F
+    E --> F
+</pre></div>
+<p>Each round starts from scratch with a brand-new model, because the previous round's model has already seen the cutter that is now hidden. The formal name is <strong>leave-one-group-out cross-validation</strong>; for us the group is one cutter, so we call it <strong>leave-one-cutter-out testing</strong>. (Ordinary “leave-one-out” hides a single row, which is not what we do.)</p>
+<p>A few more rules keep the test honest:</p>
+<ul>
+  <li>The model never sees the answer column, the cutter's ID number, or the file name (which reveals the cutter).</li>
+  <li>It only uses the current cycle and earlier ones, never future cycles.</li>
+  <li>Anything we tune or adjust is done using the 12 training cutters only.</li>
+</ul>
+<h3>Choosing the best model fairly</h3>
+<p>Every model takes the same 13 tests. We compare them cutter by cutter, giving each cutter equal weight, so one long-lived cutter cannot dominate. A model that is slightly better on average but sometimes says “10 cycles left” when only 1 is left is dangerous, and we reject it. If two are nearly tied, we pick the simpler one. The winner is then trained once on all 13 cutters for the demo, but the scores we report always come from the 13 fair rounds.</p>
+</section>
+
+<section id="models">
+<h2><span class="n">07</span>The models we will build</h2>
+<p>We build from very simple to more complex. The simple ones are the yardsticks that prove whether the complex ones are worth anything.</p>
+<div class="diagram"><pre class="mermaid">
+flowchart TD
+    A[One finished cycle] --> B[Simple yardsticks: fixed count, age only]
+    A --> C[120-number summary table]
+    A --> D[Raw sensor signals]
+    C --> E[Tree models: XGBoost and LightGBM]
+    D --> F[Neural networks: 1D CNN and TCN]
+    B --> G[Estimate of cycles left]
+    E --> G
+    F --> G
+</pre></div>
+<h3>Step 1 · Simple yardsticks</h3>
+<p><strong>Fixed count.</strong> “Always change the cutter after N cycles,” with N chosen as well as possible from the training cutters. Roughly what workshops do today. Our whole system has to beat it.</p>
+<p><strong>Age only.</strong> A model that only knows how many cycles the cutter has done plus its settings, with no sensor data. A model could look clever just by learning “cycle 100 is usually closer to breaking than cycle 10.” If our sensor models cannot beat this, the sensors are not telling us anything useful, and we have to say so.</p>
+<h3>Step 2 · Tree models on the summary table</h3>
+<p>A <strong>decision tree</strong> predicts by asking a chain of yes/no questions:</p>
+<pre class="text">Is the vibration spikiness high?
+├── No → Has the cutter done more than 80 cycles?
+│        ├── No  → about 50 cycles left
+│        └── Yes → about 20 cycles left
+└── Yes → about 6 cycles left</pre>
+<p>One tree alone is rough. So we build many small trees one after another, each focusing on the mistakes the earlier trees still make, like a row of students marking an exam where each only corrects what the previous ones got wrong. This is <strong>gradient boosting</strong>. <strong>XGBoost</strong> and <strong>LightGBM</strong> are two popular, well-tested gradient-boosting programs. We try both on the 120-number table and compare them. They are fast, work well on small tables like ours, and show which features they rely on.</p>
+<p>To see why a tree model made a prediction, we use <strong>SHAP</strong>, which shows how much each input pushed the prediction up or down (“high vibration spread lowered the estimate by 8 cycles; the cutter's age lowered it by 4”). SHAP explains what the model learned; it does not prove a reading physically caused the break.</p>
+<h3>Step 3 · Neural networks on the raw signals</h3>
+<p>The six summary numbers throw information away. Two signals can have the same average and spread but look completely different: one smooth and steady, one full of sudden knocks. To use that detail, we feed the raw signals to a neural network.</p>
+<p>A <strong>neural network</strong> is a model made of layers of simple calculations with millions of adjustable numbers inside. During training it nudges those numbers a little at a time to reduce its error.</p>
+<p>A <strong>CNN</strong> (Convolutional Neural Network) is good at finding small patterns that can appear anywhere in a long signal. It slides a small learned pattern-detector, a <strong>filter</strong>, along the signal, like sliding a stencil along a strip of material to look for one crack shape. One filter might learn to react to sharp knocks, another to steady rattling. We never tell it what to look for. Stacking layers lets later layers combine short patterns into longer behaviours, the way letters build words and words build sentences. Ours is a <strong>1D CNN</strong> because the filter slides along one direction: time.</p>
+<p>Why not an ordinary neural network? It would give a separate weight to every single moment in the signal, millions of numbers to learn, and would not realise that the same knock at second 2.1 and at second 2.3 is the same thing. A CNN reuses one small filter everywhere, so it needs far fewer numbers and spots a pattern wherever it appears.</p>
+<p>A <strong>TCN</strong> (Temporal Convolutional Network) is a CNN built for time signals. Each deeper layer looks at points spaced further apart (gap 1, then 2, 4, 8), so it takes in a long stretch of signal without becoming huge. Vibration and current are recorded at very different speeds, so each gets its own branch, and the two are joined with the cutter's age and settings before the final estimate.</p>
+<div class="callout"><p><strong>The honest expectation.</strong> With only 13 cutter life stories, the neural networks may not beat the tree models; a big network can memorise the training cutters. If XGBoost wins, the project still succeeds: we use it and report the comparison truthfully.</p></div>
+</section>
+
+<section id="range">
+<h2><span class="n">08</span>A range, not a single number</h2>
+<p>Two models both say “6 cycles left.” One means “between 5 and 7,” the other “anywhere from 1 to 15.” The second is far riskier to trust, but one number hides the difference. So every model gives a <strong>low estimate</strong> (careful), a <strong>middle estimate</strong> (best guess) and a <strong>high estimate</strong> (optimistic): “between 2 and 12, most likely 6.” Each of these is called a <strong>quantile</strong>.</p>
+<h3>Making the range honest</h3>
+<p>A model can claim “the truth is inside my range 90% of the time” and actually be right 60% of the time. We fix that with <strong>conformal calibration</strong>. It does not retrain or change the model; it is a simple widening step added after it:</p>
+<ol class="plain">
+  <li>Using only the 12 training cutters, take turns hiding one, train on the rest, and predict the hidden one. These are ranges made on cutters the model had not seen.</li>
+  <li>For each prediction, measure how far the truth fell outside the range. Inside means a miss of 0. A range of 4–10 with truth 12 is a miss of 2.</li>
+  <li>Sort all the misses and pick the one that would have been enough to cover the truth 90% of the time. Call it <strong>q</strong>, say q = 3.</li>
+  <li>Widen every future range by q on each side. A raw 5–13 becomes 2–16.</li>
+</ol>
+<p>The model is unchanged; we only learned how much to widen its ranges so they keep their promise. The 90% target is our choice. We also try 80% and 95% to show the trade-off: wider ranges are safer but make us change cutters earlier. Each model gets its own q. With only 13 cutters this is approximate, and we report how often the ranges really contained the truth.</p>
+<p>We also turn the estimates into plain chances, such as “a 12% chance this cutter breaks during the next cycle,” and check those too: of all the cycles we labelled 10%, about 10% should really have broken.</p>
+</section>
+
+<section id="decision">
+<h2><span class="n">09</span>Turning the estimate into a decision</h2>
+<p>The model answers “how healthy is the cutter?” A separate step, the <strong>decision rule</strong> (also called the policy), answers “so what do we do?” We build and compare four.</p>
+<h3>Rule 1 · Simple safety rule</h3>
+<pre class="text">If the low estimate of cycles left is more than 5 → KEEP GOING
+Otherwise                                         → CHANGE THE CUTTER</pre>
+<p>Using the low estimate makes it cautious: “most likely 9, could be 2” means change. The weakness is that 5 is arbitrary and ignores what a breakage costs.</p>
+<h3>Rule 2 · Compare the costs</h3>
+<p>Cost of changing now = new cutter + time to swap. Expected cost of keeping going = chance of breaking next cycle × cost of a breakage. The dataset contains no money at all, so <strong>all costs are assumed</strong>. We use simple units: a planned change costs 1, a surprise breakage costs, say, 10.</p>
+<pre class="text">Chance of breaking next cycle = 15%
+Keep going: 0.15 × 10 = 1.5 units expected
+Change now:             1.0 unit
+Decision: CHANGE THE CUTTER
+
+Chance of breaking next cycle = 5%
+Keep going: 0.05 × 10 = 0.5 units expected
+Change now:             1.0 unit
+Decision: KEEP GOING</pre>
+<p>On top, a safety limit: never keep going above a set chance of breaking, whatever the costs say. And because we do not know a real factory's costs, we repeat everything for many cost settings (a breakage costing 5, 10 or 20 times a planned change, and so on) and only claim results that hold across most of them. Every decision can be explained in one sentence: “We changed the cutter because the chance of it breaking was 15%, which made carrying on more expensive than a planned swap.”</p>
+<h3>Rule 3 · Look a few cycles ahead</h3>
+<p>Rule 3 compares whole plans over the next several cycles (“change now,” “one more then change,” “two more then change”), picks the cheapest, carries out only its first step, and re-plans after the next cycle with fresh sensor data. This is <strong>Model Predictive Control (MPC)</strong>. It needs no extra training.</p>
+<h3>Rule 4 · Optional extra: a decision-maker trained by practice</h3>
+<p><strong>Reinforcement learning (RL)</strong> trains a decision-maker by trial and error: it acts, gets a score (rewards for completed cycles, penalties for breakages and swaps) and slowly learns what scores best. A standard version for two-choice problems is the <strong>Deep Q-Network (DQN)</strong>.</p>
+<p>RL is an <strong>optional extra</strong>, not the core, for two plain reasons:</p>
+<ol class="plain">
+  <li>The data has no costs, so any score we give the agent is our assumption.</li>
+  <li>Every cutter in the experiment was simply run until it broke. The data never shows what happens after a “change it now” decision, so RL cannot learn from these rows directly.</li>
+</ol>
+<p>The honest way to do it is a <strong>simulated factory</strong>: a program that creates many pretend cutters with lifespans like the real ones, lets the agent choose, and charges our assumed costs. The agent then learns our simulator, not new facts about real cutters. If it beats rules 2 and 3 there, we report that as a simulator result under stated costs. If not, the simpler rule wins, which is a useful finding too.</p>
+</section>
+
+<section id="evaluate">
+<h2><span class="n">10</span>How we test the decisions</h2>
+<p>For each hidden cutter, we replay its real life cycle by cycle. After each cycle the model gives its estimate and each rule chooses. Because we know when that cutter really broke, we can see what would have happened:</p>
+<ul>
+  <li>Did the rule let the cutter break?</li>
+  <li>If it changed early, how many good cycles did it throw away?</li>
+  <li>What share of the cutter's real life did it use?</li>
+  <li>What was the total cost under each cost setting?</li>
+</ul>
+<p>Every rule is compared with the best possible fixed-count rule, and with a “perfect” rule that magically knows the breaking point (impossible in reality; it just shows how much room is left). Replays of real cutters are our main evidence. Longer runs where cutters get replaced need the simulated factory, and those results are always labelled as simulated.</p>
+<h3>What counts as success</h3>
+<p>Set before seeing any results, so we cannot move the goalposts:</p>
+<ul>
+  <li>The sensor model beats the age-only model by at least 10%, or we say the sensors did not add enough.</li>
+  <li>A range that promises 90% contains the truth 85–95% of the time on hidden cutters.</li>
+  <li>Our best rule costs at least 10% less than the best fixed-count rule, without more breakages.</li>
+  <li>That holds across at least 70% of the cost settings we try.</li>
+</ul>
+</section>
+
+<section id="system">
+<h2><span class="n">11</span>The whole system on one page</h2>
+<div class="diagram"><pre class="mermaid">
+flowchart TD
+    A[Cutter runs one cycle] --> B{Did it survive?}
+    B -->|No| C[Breakage recorded, lifecycle ends]
+    B -->|Yes| D[Read vibration and current from that cycle]
+    D --> E[Add cutter age, type and cutting settings]
+    E --> F[Best model: XGBoost or LightGBM, or CNN or TCN]
+    F --> G[Low, middle and high estimate of cycles left]
+    G --> H[Widen the range so it keeps its promise]
+    H --> I[Chance of breaking in the next cycle]
+    I --> J{Decision rule}
+    J -->|Risk acceptable| K[KEEP GOING]
+    J -->|Risk too costly| L[CHANGE THE CUTTER]
+    K --> A
+    L --> M[New cutter installed]
+    M --> A
+</pre></div>
+<p>In words: after each cycle, read the sensors, estimate the cycles left as a range, make the range honest, turn it into a chance of breaking, weigh that against the cost of a swap, and decide.</p>
+</section>
+
+<section id="demo">
+<h2><span class="n">12</span>What we will show in the demo</h2>
+<p>A web dashboard that replays a real hidden cutter one cycle at a time, showing:</p>
+<ul>
+  <li>the latest vibration and current signals</li>
+  <li>the estimated cycles left, with its range</li>
+  <li>the chance of breaking in the next cycle</li>
+  <li>the recommendation and a one-line reason</li>
+  <li>what the fixed-count rule and the other rules would have done at the same moment</li>
+  <li>the cycle where the cutter really broke, which the model was never shown in advance</li>
+</ul>
+<p>Sliders for the assumed costs show how the right decision changes even when the cutter itself has not.</p>
+</section>
+
+<section id="plan">
+<h2><span class="n">13</span>Where we are, and the next 10 days</h2>
+<p><strong>Done so far (August–September 2026):</strong> compared many possible manufacturing AI projects, chose this one as a team, found and checked the dataset, wrote the full plan, and presented it at Review 1. No code has been written yet. For the next review we only show what we built, not the problem again.</p>
+<div class="tablebox"><table>
+  <thead><tr><th>Days</th><th>What gets built</th><th>What we can show</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">1–2</td><td>Download and check the data, plot every cutter's life. Build the fixed-count and age-only yardsticks.</td><td>Plots of 13 cutter lifecycles; yardstick scores.</td></tr>
+    <tr><td class="mono">3–4</td><td>Fair 13-round testing. XGBoost and LightGBM with low/middle/high estimates and the honest widening step.</td><td>First accuracy table; SHAP chart of which sensors matter.</td></tr>
+    <tr><td class="mono">5</td><td>Decision rules 1 and 2, and the cutter-by-cutter replay.</td><td>“Our rule vs fixed count” on real cutters: breakages, wasted cycles, cost.</td></tr>
+    <tr><td class="mono">6–7</td><td>Raw signals: cut out the active cutting part of each recording, train the CNN and TCN.</td><td>Tree models vs neural networks on the same 13 tests.</td></tr>
+    <tr><td class="mono">8</td><td>Rule 3 (look ahead), cost-settings sweep, final comparison.</td><td>One table that answers the main question.</td></tr>
+    <tr><td class="mono">9</td><td>The replay dashboard.</td><td>Live demo.</td></tr>
+    <tr><td class="mono">10</td><td>Slides and practice.</td><td>The review presentation.</td></tr>
+  </tbody>
+</table></div>
+<p><strong>How the team helps:</strong> read this page, agree on the cost settings we test, look at plots and results as they arrive and question anything that looks too good, and prepare the presentation. Coding, training and the dashboard are done with Codex in the repository.</p>
+<div class="callout note"><p><strong>Space and computing power are not a problem for this project.</strong> The raw signals are about 25 GB and the neural networks train best on a GPU. Aditya is arranging storage and compute. Do not shrink or skip any part of the plan because of data size or hardware.</p></div>
+<h3>Optional extras after the core works</h3>
+<ul>
+  <li><strong>Rule 4, reinforcement learning,</strong> in the simulated factory (section 9).</li>
+  <li><strong>Fewer sensors.</strong> How well it works with only the spindle current sensor, which is far cheaper to fit than 20 sensors.</li>
+  <li><strong>Other machines.</strong> Test the approach on other public milling datasets (PHM 2010, NASA Milling Wear, QIT-CEMC). Their labels mean slightly different things, so we test on them separately and never mix their rows into ours.</li>
+  <li><strong>Slowing down instead of changing.</strong> A third choice, “keep going but cut gentler,” only if we find evidence for how much it extends tool life. Our main dataset cannot tell us.</li>
+  <li><strong>Real costs.</strong> If anyone gets rough costs from a real machine shop, they drop straight into the same calculation.</li>
+</ul>
+</section>
+
+<section id="never">
+<h2><span class="n">14</span>Things we must never claim</h2>
+<p>Anyone who opens the dataset paper can catch these.</p>
+<ul class="dont">
+  <li>“The dataset has temperature.” It has vibration and electrical current only.</li>
+  <li>“We reduce downtime by 30%,” or any number we have not measured. Say we will measure it.</li>
+  <li>“It is connected to CNC controllers.” It is a decision-support dashboard; a live machine link is future work.</li>
+  <li>“Our software extends tool life.” It helps use more of the life the cutter already has.</li>
+  <li>“We test on 14 cutters.” We test on 13; the 14th broke on its first cycle.</li>
+  <li>“Our testing guarantees zero leakage.” Hiding whole cutters prevents the main source of it.</li>
+  <li>“XGBoost and LightGBM form an ensemble.” We compare them, and combine them only if that proves better.</li>
+  <li>“Deep learning will definitely win.” It may not, and that is fine.</li>
+  <li>“RL found the best real-factory policy.” At most, the best policy inside our simulator under assumed costs.</li>
+  <li>“We predict exact physical wear.” We predict cycles left before breakage.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2><span class="n">15</span>Word list</h2>
+<dl class="words">
+  <div><dt>CNC (Computer Numerical Control)</dt><dd>A machine tool whose movements are controlled by a computer program.</dd></div>
+  <div><dt>Milling</dt><dd>Cutting metal with a spinning tool that moves along a path.</dd></div>
+  <div><dt>Cutter / tool</dt><dd>The small spinning cutting part that wears out.</dd></div>
+  <div><dt>Workpiece</dt><dd>The block of metal being cut.</dd></div>
+  <div><dt>Cycle</dt><dd>One run of the cutting path around the steel block.</dd></div>
+  <div><dt>Lifecycle</dt><dd>All the cycles of one cutter, from new until it breaks.</dd></div>
+  <div><dt>Tool wear</dt><dd>Gradual damage to the cutter's edges.</dd></div>
+  <div><dt>Sensor, channel, signal</dt><dd>A measuring device; one sensor's stream; the stream of numbers over time.</dd></div>
+  <div><dt>Sampling rate</dt><dd>Readings per second (25 kHz = 25,000 per second).</dd></div>
+  <div><dt>Feature</dt><dd>One input number given to a model.</dd></div>
+  <div><dt>RUL (Remaining Useful Life)</dt><dd>How many more cycles the cutter can survive.</dd></div>
+  <div><dt>Machine learning model</dt><dd>A program that learns a pattern from examples.</dd></div>
+  <div><dt>Training, testing</dt><dd>Learning from examples with known answers; checking on examples never seen.</dd></div>
+  <div><dt>Supervised learning, regression</dt><dd>Learning from examples with correct answers; predicting a number.</dd></div>
+  <div><dt>Data leakage</dt><dd>The model accidentally seeing information it would not have in real use, making test scores look better than they are.</dd></div>
+  <div><dt>Leave-one-cutter-out testing</dt><dd>Hide one whole cutter, train on the rest, test on the hidden one, repeat for every cutter. Formally: leave-one-group-out cross-validation.</dd></div>
+  <div><dt>Baseline / yardstick</dt><dd>A simple method our system must beat.</dd></div>
+  <div><dt>Decision tree</dt><dd>A model that predicts using a chain of yes/no questions.</dd></div>
+  <div><dt>Gradient boosting</dt><dd>Building many small trees one after another, each fixing earlier mistakes.</dd></div>
+  <div><dt>XGBoost, LightGBM</dt><dd>Two popular gradient-boosting programs.</dd></div>
+  <div><dt>SHAP</dt><dd>A method that shows how much each input pushed a prediction up or down.</dd></div>
+  <div><dt>Neural network</dt><dd>A model made of layers of simple calculations with many adjustable numbers.</dd></div>
+  <div><dt>CNN (Convolutional Neural Network)</dt><dd>A neural network that slides small learned pattern-detectors (filters) along the data.</dd></div>
+  <div><dt>1D CNN</dt><dd>A CNN that slides along one direction: time.</dd></div>
+  <div><dt>TCN (Temporal Convolutional Network)</dt><dd>A CNN for time signals whose deeper layers look further back.</dd></div>
+  <div><dt>Overfitting</dt><dd>Memorising the training examples instead of learning a general pattern.</dd></div>
+  <div><dt>Quantile</dt><dd>A point in a range of possible answers: the low, middle or high estimate.</dd></div>
+  <div><dt>Coverage</dt><dd>How often the true answer really falls inside the predicted range.</dd></div>
+  <div><dt>Conformal calibration</dt><dd>Widening a model's ranges by a measured amount so they keep their stated coverage.</dd></div>
+  <div><dt>Decision rule / policy</dt><dd>The step that turns an estimate into KEEP GOING or CHANGE THE CUTTER.</dd></div>
+  <div><dt>Expected cost</dt><dd>Chance of something happening × what it would cost.</dd></div>
+  <div><dt>MPC (Model Predictive Control)</dt><dd>Plan several steps ahead, do the first step, re-plan.</dd></div>
+  <div><dt>RL (Reinforcement Learning)</dt><dd>Learning to make decisions by trial and error with rewards and penalties.</dd></div>
+  <div><dt>DQN (Deep Q-Network)</dt><dd>A standard RL method for problems with a few possible actions.</dd></div>
+  <div><dt>Simulated factory</dt><dd>A program that imitates production so a decision rule can practise in it.</dd></div>
+</dl>
+</section>
+
+<footer>
+  Source repository: <a href="https://github.com/Aadityakshatriya/AI-in-manufacturing">github.com/Aadityakshatriya/AI-in-manufacturing</a>. The same content lives in <span class="mono">PROJECT_EXPLAINED.md</span>. The full technical proposal is <span class="mono">research/proposals/toollife-policy.md</span>; where it talks about “the next job” with deadlines and part values, this page is the current plan.
+</footer>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+  var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({ startOnLoad: true, theme: dark ? 'dark' : 'neutral', flowchart: { useMaxWidth: true } });
+</script>
+</body>
+</html>

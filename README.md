@@ -6,7 +6,7 @@ We are building a system that listens to a CNC milling machine while it cuts (vi
 
 **New to the project? Read [`PROJECT_EXPLAINED.md`](PROJECT_EXPLAINED.md) top to bottom.** It starts from zero (what milling is, what a sensor is, what training a model means) and walks through the data, the models, the decision rules, how we test everything, and the plan for the next 10 days. Every technical word is explained, and there is a word list at the end.
 
-The same content as a web page, easier to read on a phone: https://claude.ai/artifact/5h9exQdwLwmZ3GizfozQDG
+The same content as a web page, easier to read on a phone: https://aadityakshatriya.github.io/AI-in-manufacturing/ (source: [`docs/index.html`](docs/index.html))
 
 ## Where the project stands
 
