@@ -77,10 +77,25 @@ def nll_np(h: np.ndarray, event_k: np.ndarray) -> float:
     return float(-ll.mean())
 
 
+def crps_np(h: np.ndarray, event_k: np.ndarray) -> float:
+    """Mean continuous ranked probability score (in cycles) of the remaining-life distributions.
+
+    For each row: Σ_k (P(failed by step k) − [k ≥ true step])². It rewards putting the probability
+    close to the true failure step, and a confident miss costs in proportion to how far off it was.
+    """
+    cdf = 1.0 - np.cumprod(1.0 - h, axis=1)
+    k = np.arange(1, h.shape[1] + 1)[None, :]
+    return float(((cdf - (k >= event_k[:, None])) ** 2).sum(1).mean())
+
+
 def fit_blur(h: np.ndarray, event_k: np.ndarray) -> float:
-    """Blur width that best predicts the failures of cutters the model did not train on."""
-    grid = [0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.7, 1.0, 1.5]
-    scores = [nll_np(blur(h, g), event_k) for g in grid]
+    """Blur width that best predicts (lowest CRPS) the failures of cutters the model did not train on.
+
+    CRPS rather than log-likelihood: with 13 cutters the likelihood is dominated by the few confident
+    misses and then prefers an almost flat curve, which ruins the median estimate (checked 28 Oct).
+    """
+    grid = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.7, 1.0]
+    scores = [crps_np(blur(h, g), event_k) for g in grid]
     return grid[int(np.argmin(scores))]
 
 
