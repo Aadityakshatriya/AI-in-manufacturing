@@ -11,8 +11,8 @@ The same content as a web page, easier to read on a phone: https://aadityakshatr
 ## Where the project stands
 
 - **August–September 2026:** chose the project, found and checked the dataset, wrote the plan, presented at Review 1.
-- **Now:** building. No code has been written yet. For the next review we show what we built, not the problem statement again.
-- **Current plan:** decisions are made one cut at a time, costs are assumed (the dataset has no money in it), and reinforcement learning is an optional extra, not the core.
+- **27–28 October 2026:** built it. A CNN autoencoder and a TCN predict how many cycles a cutter has left from its vibration and motor current; a decision rule and a reinforcement-learning workshop turn that into keep-or-change decisions. Four other public datasets were added. The agreed scope is in [`PLAN.md`](PLAN.md); the physics is explained at [`docs/physics.html`](https://aadityakshatriya.github.io/AI-in-manufacturing/physics.html).
+- **Review 2:** the video script is [`research/review-2-video-script.md`](research/review-2-video-script.md). Results tables are under `results/` (models, decisions, cross_dataset, rl) and the figures in `results/figures/`.
 
 ## Space and computing power
 
