@@ -13,7 +13,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from toollife.features import load_cycle
-from toollife.models.fast_encoder import WIN
+from toollife.models.autoencoder import WIN
 from toollife.rzeszow import ROOT, load_table
 
 PER_CYCLE = 48

@@ -2,7 +2,7 @@
 
 For each of the 13 cutters (outer fold): hide it; on the other 12, run inner leave-one-cutter-out to get
 out-of-fold predictions (used to fit one calibration temperature and the conformal safety margin);
-then train a 5-seed ensemble on all 12 (2 cutters held back for early stopping) and predict the hidden one.
+then train a 5-seed ensemble on all 12 and predict the hidden one. Folds run in parallel processes.
 
 Usage: python scripts/13_train_history.py --features {settings_age,physics,ae,physics_ae} [--seeds 5]
 The 'ae' feature sets use the CNN autoencoder of the hidden cutter's fold group (scripts/11_train_autoencoder.py).
@@ -11,6 +11,7 @@ Writes results/predictions/history_<name>.parquet (PLAN.md §6 format) and resul
 
 import argparse
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -84,19 +85,47 @@ def compress_embeddings(train_df, test_df, cols, n_components=8):
     return out[0], out[1], [c for c in cols if not c.startswith("emb_")] + pcols
 
 
-def fit_predict(train_df, test_df, cols, seeds, rng):
-    """Ensemble trained on train_df (2 tools held back for early stopping), predictions on test_df."""
+def fit_predict(train_df, test_df, cols, seeds):
+    """Ensemble trained on all of train_df for a fixed number of passes, predictions on test_df.
+
+    No early stopping: with only 12 training cutters, holding 2 back to decide when to stop was
+    noisier than simply training for a fixed 400 passes (checked on 27 Oct).
+    """
     train_df, test_df, cols = compress_embeddings(train_df, test_df, cols)
-    tools = train_df["tool"].unique()
-    val_tools = rng.choice(tools, size=2, replace=False)
-    tr, va = train_df[~train_df["tool"].isin(val_tools)], train_df[train_df["tool"].isin(val_tools)]
-    seq_tr, mean, std = make_sequences(tr, cols)
-    seq_va, _, _ = make_sequences(va, cols, mean=mean, std=std)
+    seq_tr, mean, std = make_sequences(train_df, cols)
     seq_te, _, _ = make_sequences(test_df, cols, mean=mean, std=std)
-    models = [train(seq_tr, seq_va, len(cols), seed=s) for s in range(seeds)]
+    models = [train(seq_tr, None, len(cols), seed=s) for s in range(seeds)]
     logits, gauge = predict(models, seq_te)
     rows = test_df[test_df["rul"] >= 1].sort_values(["tool", "age"])
     return rows, logits, gauge
+
+
+def run_fold(held, features, base_df, cols, seeds):
+    """One outer fold: calibrate on the other 12 cutters, then predict the hidden one."""
+    torch.set_num_threads(1)
+    df = add_autoencoder(base_df, GROUP_OF[held]) if features in ("ae", "physics_ae") else base_df
+    dev, test = df[df["tool"] != held], df[df["tool"] == held]
+    # Inner loop: out-of-fold predictions on the 12 development cutters, for calibration only.
+    oof = [fit_predict(dev[dev["tool"] != inner], dev[dev["tool"] == inner], cols, 1)[:2] for inner in sorted(dev["tool"].unique())]
+    oof_rows = pd.concat([r for r, _ in oof])
+    oof_lg = np.concatenate([l for _, l in oof])
+    ek = np.minimum(oof_rows["rul"].to_numpy(), K)
+    temp = fit_temperature(oof_lg, ek, (oof_rows["rul"].to_numpy() <= K).astype(float))
+    oof_c = curves(oof_lg, temp)
+    margin = tool_conformal_margin(oof_c["rul_q10"], oof_rows["rul"].to_numpy(), oof_rows["tool"].to_numpy())
+
+    rows, lg, gauge = fit_predict(dev, test, cols, seeds)
+    c = curves(lg, temp)
+    pred = rows[["tool", "age", "rul", "life", "file"]].copy()
+    pred["fold"] = held
+    pred["temperature"] = temp
+    for k in ("rul_q10", "rul_q50", "rul_q90", "rmst", "p_fail_1", "p_fail_3", "p_fail_5"):
+        pred[k] = c[k]
+    pred["rul_lower_conformal"] = np.maximum(c["rul_q10"] - margin, 0)
+    pred["gauge"] = gauge
+    haz = pd.DataFrame(c["hazard"][:, :60], columns=[f"hazard_{k}" for k in range(1, 61)], index=pred.index)
+    print(f"cutter {held:>3}: T={temp:.2f} margin={margin:.0f} MAE(q50)={np.abs(c['rul_q50'] - rows['rul']).mean():.1f}", flush=True)
+    return pd.concat([pred, haz], axis=1)
 
 
 def main() -> None:
@@ -107,36 +136,9 @@ def main() -> None:
     args = ap.parse_args()
     name = args.name or args.features
     base_df, cols = load(args.features)
-    rng = np.random.default_rng(0)
-
-    out_rows = []
-    for held in sorted(base_df["tool"].unique()):
-        df = add_autoencoder(base_df, GROUP_OF[held]) if args.features in ("ae", "physics_ae") else base_df
-        dev, test = df[df["tool"] != held], df[df["tool"] == held]
-        # Inner loop: out-of-fold predictions on the 12 development cutters, for calibration only.
-        oof = []
-        for inner in sorted(dev["tool"].unique()):
-            rows, lg, _ = fit_predict(dev[dev["tool"] != inner], dev[dev["tool"] == inner], cols, max(1, args.seeds // 2), rng)
-            oof.append((rows, lg))
-        oof_rows = pd.concat([r for r, _ in oof])
-        oof_lg = np.concatenate([l for _, l in oof])
-        ek = np.minimum(oof_rows["rul"].to_numpy(), K)
-        temp = fit_temperature(oof_lg, ek, (oof_rows["rul"].to_numpy() <= K).astype(float))
-        oof_c = curves(oof_lg, temp)
-        margin = tool_conformal_margin(oof_c["rul_q10"], oof_rows["rul"].to_numpy(), oof_rows["tool"].to_numpy())
-
-        rows, lg, gauge = fit_predict(dev, test, cols, args.seeds, rng)
-        c = curves(lg, temp)
-        pred = rows[["tool", "age", "rul", "life", "file"]].copy()
-        pred["fold"] = held
-        pred["temperature"] = temp
-        for k in ("rul_q10", "rul_q50", "rul_q90", "rmst", "p_fail_1", "p_fail_3", "p_fail_5"):
-            pred[k] = c[k]
-        pred["rul_lower_conformal"] = np.maximum(c["rul_q10"] - margin, 0)
-        pred["gauge"] = gauge
-        haz = pd.DataFrame(c["hazard"][:, :60], columns=[f"hazard_{k}" for k in range(1, 61)], index=pred.index)
-        out_rows.append(pd.concat([pred, haz], axis=1))
-        print(f"cutter {held:>3}: T={temp:.2f} margin={margin:.0f} MAE(q50)={np.abs(c['rul_q50'] - rows['rul']).mean():.1f}", flush=True)
+    with ProcessPoolExecutor(8) as pool:
+        futs = [pool.submit(run_fold, held, args.features, base_df, cols, args.seeds) for held in sorted(base_df["tool"].unique())]
+        out_rows = [f.result() for f in futs]
 
     pred = pd.concat(out_rows).reset_index(drop=True)
     pred.insert(0, "dataset", "rzeszow")

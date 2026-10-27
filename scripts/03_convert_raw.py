@@ -36,7 +36,7 @@ def convert(member: str) -> tuple[str, int, int]:
     vib_cols = [c for c in df.columns if c.startswith("Accelerometer")]
     cur_cols = [c for c in df.columns if c.startswith("Current")]
     vib = df[vib_cols].to_numpy()
-    if np.abs(vib).max() > 32767 or not np.allclose(vib, np.round(vib)):
+    if vib.min() < -32768 or vib.max() > 32767 or not np.allclose(vib, np.round(vib)):
         raise ValueError(f"{name}: vibration does not fit int16 losslessly")
     cur_df = df[df["Timestamps - Current"].notna()]
     cur = cur_df[cur_cols].to_numpy()
