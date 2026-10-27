@@ -1,0 +1,6 @@
+model,mae,rmse,mae_last20pct,overestimate_last20pct,mae_frac_of_life
+avg_life,34.39,35.53,24.14,19.29,0.8
+settings_age,26.19,27.01,23.3,21.42,0.88
+lgbm_settings,35.01,37.73,26.86,25.6,0.98
+lgbm_sensors,20.21,23.49,14.34,12.84,0.27
+lgbm_all,21.77,24.78,14.9,13.19,0.36

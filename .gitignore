@@ -5,3 +5,7 @@
 .DS_Store
 __pycache__/
 *.pyc
+
+# Downloaded datasets (re-download with the data script)
+data/
+.venv/
