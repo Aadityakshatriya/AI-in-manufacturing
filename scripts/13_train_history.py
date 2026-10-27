@@ -101,7 +101,7 @@ def fit_predict(train_df, test_df, cols, seeds):
     return rows, logits, gauge
 
 
-def run_fold(held, features, base_df, cols, seeds):
+def run_fold(held, features, base_df, cols, seeds, use_blur=False):
     """One outer fold: calibrate on the other 12 cutters, then predict the hidden one."""
     torch.set_num_threads(1)
     df = add_autoencoder(base_df, GROUP_OF[held]) if features in ("ae", "physics_ae") else base_df
@@ -111,8 +111,10 @@ def run_fold(held, features, base_df, cols, seeds):
     oof_rows = pd.concat([r for r, _ in oof])
     oof_lg = np.concatenate([l for _, l in oof])
     rul_oof, tools_oof = oof_rows["rul"].to_numpy(), oof_rows["tool"].to_numpy()
-    # Blur width chosen on the 12 development cutters (each predicted by a model that never saw it).
-    sigma = fit_blur(1.0 / (1.0 + np.exp(-oof_lg)), rul_oof)
+    # Optional blur of the failure curves, width chosen on the 12 development cutters. Off by default:
+    # the inner models (1 seed, 11 cutters) are weaker than the final 5-seed models, so the chosen
+    # blur over-widens them and hurts the median (tried 28 Oct with log-likelihood and CRPS).
+    sigma = fit_blur(1.0 / (1.0 + np.exp(-oof_lg)), rul_oof) if use_blur else 0.0
     oof_c = curves(oof_lg, sigma=sigma)
     # Conformal widening, one score per cutter: how far below its low estimate (or above its high
     # estimate) the truth ever fell. The margin is the worst such miss seen on the other cutters.
@@ -144,11 +146,12 @@ def main() -> None:
     ap.add_argument("--features", default="physics", choices=["settings_age", "physics", "ae", "physics_ae"])
     ap.add_argument("--seeds", type=int, default=5)
     ap.add_argument("--name")
+    ap.add_argument("--blur", action="store_true", help="widen failure curves by a blur chosen on inner folds")
     args = ap.parse_args()
     name = args.name or args.features
     base_df, cols = load(args.features)
     with ProcessPoolExecutor(8) as pool:
-        futs = [pool.submit(run_fold, held, args.features, base_df, cols, args.seeds) for held in sorted(base_df["tool"].unique())]
+        futs = [pool.submit(run_fold, held, args.features, base_df, cols, args.seeds, args.blur) for held in sorted(base_df["tool"].unique())]
         results = [f.result() for f in futs]
     out_rows = [r for r, _ in results]
     nested = pd.concat([r for r, _ in results] + [i for _, i in results]).reset_index(drop=True)

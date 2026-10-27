@@ -216,7 +216,7 @@ def figure(agg: pd.DataFrame, models):
     from matplotlib.patches import Patch
 
     ink, muted, grid_c = "#0b0b0b", "#52514e", "#e4e3df"
-    series = ["#2a78d6", "#eb6834", "#1baf7a", "#6250d6"]
+    series = ["#2a78d6", "#eb6834", "#1baf7a", "#6250d6", "#c2410c", "#8a96a0"]
     fig, axes = plt.subplots(1, 2, figsize=(14, 4.6 + 0.5 * len(models)), gridspec_kw=dict(width_ratios=[1.1, 1]))
 
     ax = axes[0]
