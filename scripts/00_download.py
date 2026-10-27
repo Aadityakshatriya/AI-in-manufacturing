@@ -7,6 +7,8 @@ documented in research/next-phase/data-survey.md.
 
 import json
 import sys
+import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -14,15 +16,30 @@ from pathlib import Path
 RAW = Path(__file__).resolve().parents[1] / "data" / "raw"
 
 
-def fetch(url: str, dest: Path, size: int | None = None) -> str:
+def fetch(url: str, dest: Path, size: int | None = None, tries: int = 8) -> str:
+    """Download with retries; resumes a partial .part file with an HTTP Range request."""
     if dest.exists() and (size is None or dest.stat().st_size == size):
         return "skip"
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_name(dest.name + ".part")
-    req = urllib.request.Request(url, headers={"User-Agent": "toollife-research/0.1"})
-    with urllib.request.urlopen(req, timeout=120) as r, open(tmp, "wb") as f:
-        while chunk := r.read(1 << 20):
-            f.write(chunk)
+    for attempt in range(1, tries + 1):
+        have = tmp.stat().st_size if tmp.exists() else 0
+        headers = {"User-Agent": "toollife-research/0.1"}
+        if have:
+            headers["Range"] = f"bytes={have}-"
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=120) as r:
+                mode = "ab" if have and r.status == 206 else "wb"
+                with open(tmp, mode) as f:
+                    while chunk := r.read(1 << 20):
+                        f.write(chunk)
+            break
+        except (OSError, urllib.error.URLError) as e:
+            if attempt == tries:
+                raise
+            print(f"retry {attempt} {dest.name}: {e}", flush=True)
+            time.sleep(min(60, 5 * attempt))
     if size is not None and tmp.stat().st_size != size:
         raise IOError(f"{dest.name}: got {tmp.stat().st_size} bytes, expected {size}")
     tmp.rename(dest)
@@ -40,7 +57,7 @@ def luh() -> None:
     files = get_json("https://data.mendeley.com/public-api/datasets/zpxs87bjt8")["files"]
     out = RAW / "luh"
     jobs = [(f["content_details"]["download_url"], out / f["filename"], f["size"]) for f in files]
-    with ThreadPoolExecutor(12) as pool:
+    with ThreadPoolExecutor(6) as pool:
         for i, res in enumerate(pool.map(lambda j: fetch(*j), jobs), 1):
             if i % 500 == 0 or i == len(jobs):
                 print(f"luh {i}/{len(jobs)}", flush=True)
