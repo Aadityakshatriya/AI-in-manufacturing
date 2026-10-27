@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="How a CNC milling cutter wears and breaks, and how motor current and vibration reveal it. Physics primer for the ToolLife Policy project.">
+<title>How a Cutter Dies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: same shop-manual column as the project explainer; figures break out to full column width */
+:root {
+  --bg: #f6f7f8; --paper: #ffffff; --ink: #1b2228; --muted: #5a6670; --rule: #d8dde2;
+  --steel: #2f4a5c; --accent: #c2410c; --keep: #2f7d4f; --change: #b4321f; --code-bg: #eef1f4;
+  --steel-fill: #c9d3db; --tool-fill: #c9a24a; --chip: #8a96a0;
+  --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171b; --paper: #182026; --ink: #e4e9ed; --muted: #9aa7b1; --rule: #2c3740;
+    --steel: #8fb3c9; --accent: #f08a4b; --keep: #6cc791; --change: #f07a66; --code-bg: #1f2931;
+    --steel-fill: #3a4954; --tool-fill: #a8853a; --chip: #6b7884; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171b; --paper: #182026; --ink: #e4e9ed; --muted: #9aa7b1; --rule: #2c3740;
+  --steel: #8fb3c9; --accent: #f08a4b; --keep: #6cc791; --change: #f07a66; --code-bg: #1f2931;
+  --steel-fill: #3a4954; --tool-fill: #a8853a; --chip: #6b7884; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 40px 80px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 24px 64px; } }
+nav.toc { position: sticky; top: 24px; align-self: start; font-size: 14px; line-height: 1.4; }
+nav.toc .label { font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; counter-reset: s; }
+nav.toc li { counter-increment: s; display: grid; grid-template-columns: 22px 1fr; }
+nav.toc li::before { content: counter(s); font-family: var(--mono); font-size: 12px; color: var(--muted); padding-top: 1px; }
+nav.toc a { color: var(--ink); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); }
+nav.toc .back { margin-top: 18px; display: block; font-size: 13px; }
+@media (max-width: 900px) { nav.toc { position: static; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); } }
+main { min-width: 0; max-width: 74ch; }
+header.hero { padding-bottom: 26px; border-bottom: 2px solid var(--ink); }
+.eyebrow { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(44px, 8vw, 78px); line-height: .95; margin: 10px 0 16px; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.lede { font-size: 20px; line-height: 1.55; margin: 0; }
+section { padding-top: 40px; scroll-margin-top: 16px; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 34px; line-height: 1.1; margin: 0 0 14px; text-wrap: balance; display: flex; gap: 12px; align-items: baseline; }
+h2 .n { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; flex: none; }
+h3 { font-family: var(--display); font-weight: 600; font-size: 23px; margin: 26px 0 6px; text-wrap: balance; }
+p { margin: 0 0 14px; } ul { margin: 0 0 16px; padding-left: 22px; } li { margin-bottom: 5px; }
+a { color: var(--steel); }
+.mono { font-family: var(--mono); font-size: .88em; }
+figure { margin: 8px 0 22px; }
+figure img { display: block; width: 100%; height: auto; border-radius: 6px; background: #fff; border: 1px solid var(--rule); }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.svgbox { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; overflow-x: auto; }
+.svgbox svg { display: block; width: 100%; height: auto; min-width: 0; }
+svg text { font-family: var(--body); fill: var(--ink); }
+svg .lbl { font-size: 13px; } svg .small { font-size: 11px; fill: var(--muted); } svg .big { font-family: var(--display); font-size: 20px; font-weight: 600; }
+svg .accent { fill: var(--accent); } svg .stroke-ink { stroke: var(--ink); } svg .stroke-muted { stroke: var(--muted); }
+.spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; margin: 8px 0 20px; }
+.spec div { background: var(--paper); padding: 10px 12px; min-width: 0; }
+.spec .k { display: block; font-family: var(--display); text-transform: uppercase; letter-spacing: .07em; font-size: 13px; color: var(--muted); }
+.spec .v { font-family: var(--mono); font-size: 15px; }
+.spec .h { display: block; font-size: 13px; color: var(--muted); line-height: 1.35; margin-top: 2px; }
+.tablebox { overflow-x: auto; margin: 6px 0 20px; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: 13px; color: var(--muted); font-weight: 600; }
+td.num { font-family: var(--mono); font-size: 14px; white-space: nowrap; }
+.callout { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; margin: 6px 0 20px; }
+.callout.note { border-left-color: var(--steel); }
+.callout p:last-child { margin-bottom: 0; }
+footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+footer li { margin-bottom: 4px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <div class="label">Contents</div>
+  <ol>
+    <li><a href="#machine">The machine</a></li>
+    <li><a href="#cutter">The cutter</a></li>
+    <li><a href="#cycle">One cycle</a></li>
+    <li><a href="#settings">The settings</a></li>
+    <li><a href="#wear">How a cutter dies</a></li>
+    <li><a href="#sensors">What the sensors feel</a></li>
+    <li><a href="#life">A whole life in the data</a></li>
+    <li><a href="#predict">What we predict</a></li>
+    <li><a href="#common">Other machines</a></li>
+  </ol>
+  <a class="back" href="./">← Project explainer</a>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">ToolLife Policy · physics first</div>
+  <h1>How a cutter <span>dies</span></h1>
+  <p class="lede">What a milling cutter is, what the settings in our data physically do to it, how it wears and snaps, and why the machine's motor current and vibration change long before it breaks. Every number here is from our dataset or worked out from it.</p>
+</header>
+
+<section id="machine">
+<h2><span class="n">01</span>The machine</h2>
+<p>A <strong>CNC milling machine</strong> holds a block of metal on a table and spins a small cutting tool above it. A computer program moves the table left and right (the X direction), forwards and back (Y), and the tool up and down (Z), so the spinning tool shaves metal off along an exact path. Our data comes from a Haas VF-1 machine at Rzeszów University of Technology in Poland, cutting blocks of hardened chromium-molybdenum steel (grade 42CrMo4).</p>
+<div class="pair">
+  <figure><img src="img/physics/nasa_milling.jpg" alt="An end mill in a holder cutting metal in a CNC machine, with chips and coolant" loading="lazy"><figcaption>A CNC mill cutting with an end mill. Chips fly off the spinning tool. (NASA, public domain)</figcaption></figure>
+  <figure><img src="img/physics/paper_fig1.jpg" alt="The Haas VF-1 milling machine used for the dataset, with X, Y and Z axes marked" loading="lazy"><figcaption>The actual machine used for our data, with its three axes marked. (Piecuch &amp; Żabiński 2025, Fig. 1)</figcaption></figure>
+</div>
+</section>
+
+<section id="cutter">
+<h2><span class="n">02</span>The cutter</h2>
+<p>The cutting tool is an <strong>end mill</strong>: a solid rod of tungsten carbide, 10 mm across, with four spiral grooves called <strong>flutes</strong>. The sharp edge along each flute is a <strong>tooth</strong>. The spiral (the <strong>helix</strong>) makes each tooth enter the steel gradually instead of all at once, and carries chips up and away. The very bottom corner of each tooth is the most fragile point; that is usually where it chips first. The tool is coated with a thin gold or grey ceramic layer (TiAlN) that resists heat.</p>
+<p>The cutter is gripped in a <strong>holder</strong>, which fits into the machine's spinning shaft, the <strong>spindle</strong>. In this experiment the holder was a shrink-fit type: it is heated, the cutter slides in, and it grips tight as it cools.</p>
+<div class="pair">
+  <figure><img src="img/physics/paper_fig15.jpg" alt="A new four-flute end mill seen from the end and mounted in its holder" loading="lazy"><figcaption>A new cutter from the experiment: four teeth seen end-on, and mounted in its holder. (Piecuch &amp; Żabiński 2025, Fig. 15)</figcaption></figure>
+  <div class="svgbox" role="img" aria-label="End view of a four-tooth cutter spinning 53 times a second, each tooth striking 213 times a second">
+    <svg viewBox="0 0 320 300">
+      <circle cx="160" cy="140" r="95" fill="var(--tool-fill)" stroke="var(--ink)" stroke-width="1.5"/>
+      <g fill="var(--bg)" stroke="var(--ink)" stroke-width="1.2">
+        <path d="M160 140 L160 45 A95 95 0 0 1 218 65 Z"/>
+        <path d="M160 140 L255 140 A95 95 0 0 1 235 198 Z"/>
+        <path d="M160 140 L160 235 A95 95 0 0 1 102 215 Z"/>
+        <path d="M160 140 L65 140 A95 95 0 0 1 85 82 Z"/>
+      </g>
+      <g fill="var(--accent)"><circle cx="160" cy="45" r="5"/><circle cx="255" cy="140" r="5"/><circle cx="160" cy="235" r="5"/><circle cx="65" cy="140" r="5"/></g>
+      <path d="M268 70 A125 125 0 0 1 285 120" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <path d="M279 112 L285 124 L291 110" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="160" y="22" text-anchor="middle" class="lbl">4 teeth (orange dots), 10 mm across</text>
+      <text x="160" y="268" text-anchor="middle" class="big">53 turns per second</text>
+      <text x="160" y="290" text-anchor="middle" class="lbl">so the steel is hit 4 × 53 = <tspan class="accent" font-weight="700">213 times a second</tspan></text>
+    </svg>
+  </div>
+</div>
+<div class="spec">
+  <div><span class="k">Spin</span><span class="v">3,200 rpm</span><span class="h">53 turns every second</span></div>
+  <div><span class="k">Tooth hits</span><span class="v">213 per second</span><span class="h">one every 4.7 ms; about 770,000 over a 116-cycle life</span></div>
+  <div><span class="k">Edge speed</span><span class="v">100 m/min</span><span class="h">the cutting edge moves at brisk walking pace</span></div>
+  <div><span class="k">Feed</span><span class="v">640 mm/min</span><span class="h">how fast the table carries the steel past the tool</span></div>
+  <div><span class="k">Bite per tooth</span><span class="v">0.05 mm</span><span class="h">each tooth shaves a chip thinner than a human hair</span></div>
+</div>
+</section>
+
+<section id="cycle">
+<h2><span class="n">03</span>What one cycle is</h2>
+<p>Each steel block was cut away in rings. The cutter travelled once around the outside of the block, shaving off a ring of steel. That one lap is <strong>one cycle</strong>: about 35 cm of path and about 31 seconds of actual cutting. Then it moved one step inwards and did the next ring. When a layer was finished, the tool stepped down and started again on the next layer. A cutter worked through ring after ring, block after block, until it broke.</p>
+<figure><img src="img/physics/paper_fig6.jpg" alt="A steel block seen from above, divided into seven rings at 4.5 mm width or four rings at 8 mm width" loading="lazy"><figcaption>A block seen from above. Each ring is one cycle. With a 4.5 mm sideways bite there are 7 rings per layer; with 8 mm there are 4. (Piecuch &amp; Żabiński 2025, Fig. 6)</figcaption></figure>
+<p>The cutter turns clockwise and travels clockwise around the block, so each tooth bites in at its thickest and leaves thin. This is called <strong>climb milling</strong>.</p>
+</section>
+
+<section id="settings">
+<h2><span class="n">04</span>The settings, and what each one does to the cutter</h2>
+<p>The spin speed and feed were the same for every cutter. Four things were changed between cutters, and each one changes the force on the tool.</p>
+<div class="svgbox" role="img" aria-label="Side and top views showing axial depth (how deep down the cutter is in the steel) and radial depth (how wide a bite it takes sideways)">
+  <svg viewBox="0 0 640 250">
+    <text x="150" y="20" text-anchor="middle" class="lbl" font-weight="700">From the side: axial depth</text>
+    <rect x="40" y="120" width="230" height="110" fill="var(--steel-fill)" stroke="var(--ink)"/>
+    <rect x="40" y="90" width="120" height="30" fill="var(--steel-fill)" stroke="var(--ink)" stroke-dasharray="4 3" opacity=".5"/>
+    <rect x="160" y="40" width="28" height="80" fill="var(--tool-fill)" stroke="var(--ink)"/>
+    <rect x="152" y="25" width="44" height="22" fill="var(--chip)" stroke="var(--ink)"/>
+    <line x1="205" y1="90" x2="205" y2="120" stroke="var(--accent)" stroke-width="2"/>
+    <text x="212" y="102" class="lbl accent" font-weight="700">5 or 10 mm</text>
+    <text x="212" y="118" class="small">how deep down the tool is in the steel</text>
+    <text x="100" y="80" text-anchor="middle" class="small">steel already removed</text>
+    <text x="320" y="20" class="lbl" font-weight="700">From above: radial depth</text>
+    <rect x="330" y="60" width="270" height="150" fill="var(--steel-fill)" stroke="var(--ink)"/>
+    <rect x="330" y="60" width="270" height="22" fill="var(--bg)" stroke="var(--ink)" stroke-dasharray="4 3" opacity=".7"/>
+    <circle cx="460" cy="74" r="28" fill="var(--tool-fill)" stroke="var(--ink)"/>
+    <line x1="500" y1="74" x2="500" y2="102" stroke="var(--accent)" stroke-width="2"/>
+    <text x="507" y="96" class="lbl accent" font-weight="700">4.5 or 8 mm</text>
+    <text x="465" y="135" text-anchor="middle" class="small">how wide a bite it takes sideways,</text>
+    <text x="465" y="150" text-anchor="middle" class="small">out of the cutter's 10 mm width</text>
+    <path d="M560 160 L410 160" stroke="var(--muted)" stroke-width="1.5"/><path d="M418 154 L408 160 L418 166" fill="none" stroke="var(--muted)" stroke-width="1.5"/>
+    <text x="485" y="180" text-anchor="middle" class="small">steel moves past the tool</text>
+  </svg>
+</div>
+<div class="tablebox"><table>
+  <thead><tr><th>Setting</th><th>Values</th><th>What it physically does</th><th>What happened in our data</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Sideways bite</strong> (radial depth)</td><td class="num">4.5 or 8 mm</td><td>How much of the cutter's width is buried in the steel: 45% or 80%. A wider bite means each tooth stays in the steel longer and more teeth cut at once, so the force is higher. The cutter maker recommends at most 45%.</td><td>The 5 cutters at 8 mm lived 30–54 cycles. At 4.5 mm (normal holder) they lived 60–150. Roughly a third of the life.</td></tr>
+    <tr><td><strong>Depth</strong> (axial depth)</td><td class="num">5 or 10 mm</td><td>How much of the cutter's height is cutting. Twice the depth means twice the steel per second and about twice the force on the tool.</td><td>Surprisingly little effect on life on its own.</td></tr>
+    <tr><td><strong>Holder length</strong></td><td class="num">80 or 160 mm</td><td>How far the cutter sticks out from the machine. A sticking-out tool bends like a diving board: bending grows with the <em>cube</em> of length, so twice as long is about 5–8 times floppier. A floppy tool starts shaking on its own (<strong>chatter</strong>), which can snap it fast.</td><td>Both cutters on the long holder died almost at once: at cycle 1 and cycle 15.</td></tr>
+    <tr><td><strong>Steel hardness</strong></td><td class="num">35–42 HRC</td><td>Harder steel needs more force to cut and wears the edge faster.</td><td>With the same settings, harder blocks gave shorter lives (cutter 6 at 40 HRC: 30 cycles, against 41–50 for cutters at 35–37 HRC).</td></tr>
+  </tbody>
+</table></div>
+<div class="svgbox" role="img" aria-label="Two cutters on holders, the longer one bending eight times as much under the same push">
+  <svg viewBox="0 0 640 210">
+    <rect x="20" y="20" width="600" height="22" fill="var(--chip)" stroke="var(--ink)"/>
+    <text x="320" y="36" text-anchor="middle" class="small" fill="var(--bg)">machine spindle</text>
+    <rect x="150" y="42" width="34" height="62" fill="var(--steel-fill)" stroke="var(--ink)"/>
+    <rect x="159" y="104" width="16" height="40" fill="var(--tool-fill)" stroke="var(--ink)"/>
+    <text x="167" y="168" text-anchor="middle" class="lbl">80 mm holder</text>
+    <text x="167" y="186" text-anchor="middle" class="small">bends a little</text>
+    <rect x="420" y="42" width="34" height="112" fill="var(--steel-fill)" stroke="var(--ink)" opacity=".35" stroke-dasharray="4 3"/>
+    <path d="M420 42 L454 42 Q462 100 478 154 L444 154 Q430 100 420 42 Z" fill="var(--steel-fill)" stroke="var(--ink)"/>
+    <path d="M452 154 L468 154 L478 192 L462 192 Z" fill="var(--tool-fill)" stroke="var(--ink)"/>
+    <path d="M520 172 L486 172" stroke="var(--accent)" stroke-width="2"/><path d="M494 166 L484 172 L494 178" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="528" y="168" class="lbl accent">cutting force</text>
+    <text x="300" y="120" text-anchor="middle" class="big">twice as long →</text>
+    <text x="300" y="142" text-anchor="middle" class="lbl">5–8× more bending</text>
+    <text x="437" y="205" text-anchor="middle" class="lbl">160 mm holder</text>
+  </svg>
+</div>
+<h3>How hard the cutter is working</h3>
+<p>From the settings we can work out how much steel is removed each minute and roughly how much power and force that takes. The power and force columns are estimates from standard cutting formulas; the measured spindle current follows their ratios within about 10%.</p>
+<div class="tablebox"><table>
+  <thead><tr><th>Depth × sideways bite</th><th>Steel removed per minute</th><th>Cutting power</th><th>Average push on the edge</th></tr></thead>
+  <tbody>
+    <tr><td class="num">5 × 4.5 mm</td><td class="num">14.4 cm³</td><td class="num">≈ 1.5 kW</td><td>≈ 890 N, the weight of a 90 kg person</td></tr>
+    <tr><td class="num">5 × 8 mm</td><td class="num">25.6 cm³</td><td class="num">≈ 2.5 kW</td><td>≈ 1,500 N</td></tr>
+    <tr><td class="num">10 × 4.5 mm</td><td class="num">28.8 cm³</td><td class="num">≈ 3.0 kW</td><td>≈ 1,800 N</td></tr>
+    <tr><td class="num">10 × 8 mm</td><td class="num">51.2 cm³</td><td class="num">≈ 5.1 kW</td><td>≈ 3,000 N, three people standing on a 10 mm rod</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section id="wear">
+<h2><span class="n">05</span>How a cutter wears, and how it dies</h2>
+<p>Every tooth hit is a small hammer blow at several hundred degrees. Over hundreds of thousands of hits the edge degrades in a few ways:</p>
+<ul>
+  <li><strong>Flank wear.</strong> The face just below the edge rubs against the freshly cut steel and wears flat. A blunter edge rubs instead of slicing, so the force goes up.</li>
+  <li><strong>Crater wear.</strong> The hot chip sliding over the top face scoops out a shallow crater.</li>
+  <li><strong>Chipping.</strong> Small pieces break off the edge from the repeated impacts.</li>
+  <li><strong>Fracture.</strong> A whole tooth, or the whole cutter, snaps when the force or the bending gets too high. This is how every cutter in our data ended.</li>
+</ul>
+<div class="svgbox" role="img" aria-label="Wear grows fast at first, then slowly and steadily for most of the life, then speeds up until the cutter breaks">
+  <svg viewBox="0 0 640 230">
+    <line x1="60" y1="190" x2="610" y2="190" stroke="var(--ink)"/><line x1="60" y1="190" x2="60" y2="20" stroke="var(--ink)"/>
+    <text x="335" y="220" text-anchor="middle" class="lbl">cutting time →</text>
+    <text x="22" y="105" text-anchor="middle" class="lbl" transform="rotate(-90 22 105)">wear →</text>
+    <rect x="60" y="20" width="70" height="170" fill="var(--steel-fill)" opacity=".35"/>
+    <rect x="460" y="20" width="150" height="170" fill="var(--accent)" opacity=".12"/>
+    <path d="M60 190 C80 150 100 140 130 135 L460 105 C510 95 545 70 575 30" fill="none" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M567 22 l16 16 M583 22 l-16 16" stroke="var(--change)" stroke-width="3"/>
+    <text x="95" y="40" text-anchor="middle" class="lbl">1. break-in</text>
+    <text x="295" y="70" text-anchor="middle" class="lbl">2. slow, steady wear (most of the life)</text>
+    <text x="535" y="140" text-anchor="middle" class="lbl accent" font-weight="700">3. runaway wear</text>
+    <text x="535" y="158" text-anchor="middle" class="small">blunt edge → more force → more heat</text>
+    <text x="535" y="174" text-anchor="middle" class="small">→ faster wear → fracture</text>
+  </svg>
+</div>
+<p>In our data the failure was judged by eye: a cutter counted as dead when it had snapped or lost a tooth. Nobody measured the wear in between, so our dataset tells us <em>when</em> each cutter broke, not how worn it was along the way.</p>
+<figure><img src="img/physics/paper_fig14.jpg" alt="Three broken cutters: one snapped off at the holder, one with a broken tip, one with a single broken tooth corner circled" loading="lazy"><figcaption>How the cutters in our data ended: (a) snapped off right at the holder, (b) tip broken off, (c) one tooth corner broken (circled). (Piecuch &amp; Żabiński 2025, Fig. 14)</figcaption></figure>
+<figure><img src="img/physics/paper_fig16.jpg" alt="All the damaged cutters from the experiment laid side by side" loading="lazy"><figcaption>All the dead cutters from the experiment. Most snapped across the fluted part, near where the bending is greatest. (Piecuch &amp; Żabiński 2025, Fig. 16)</figcaption></figure>
+</section>
+
+<section id="sensors">
+<h2><span class="n">06</span>What the sensors feel</h2>
+<p>Nobody can look at the cutter while it spins at 53 turns a second inside a cloud of chips and coolant. So the machine was fitted with two kinds of sensors that feel the cutting indirectly.</p>
+<h3>Motor current: an electricity meter on every motor</h3>
+<p>A motor draws more electricity when it has to push harder. The <strong>spindle motor</strong> spins the cutter, so its current shows the twisting effort of cutting. The <strong>table motors</strong> (X and Y) push the steel into the cutter, so their current shows how hard the steel is pushing back. A blunt edge rubs instead of slicing: it pushes back more against the table than it adds to the twisting, so the <strong>table current rises fastest</strong> as the cutter wears.</p>
+<p>These meters read the average strength of the current five times a second. That is enough to see the load rise and fall around the block, but far too slow to see individual tooth hits.</p>
+<figure><img src="img/physics/currents_one_cycle.png" alt="Spindle and table motor current over one cycle for a nearly new and a worn cutter; both currents are higher for the worn cutter" loading="lazy"><figcaption>Cutter 8, our data. The same ring of steel, cut when the cutter was nearly new and one cycle before it broke. While cutting, the spindle draws 3.2 A new and 3.55 A worn. The table motor on the long sides goes from about 0.12 A to 0.17 A. The tall spikes at the end are the spindle stopping, not cutting.</figcaption></figure>
+<h3>Vibration: a microphone that hears every tooth</h3>
+<p><strong>Accelerometers</strong> are vibration sensors. Eight were fixed to the machine: three on the spindle head and five on the table drives. They take 25,000 readings a second, fast enough to hear each tooth strike the steel.</p>
+<div class="pair">
+  <figure><img src="img/physics/paper_fig2.jpg" alt="Accelerometers mounted on the spindle head" loading="lazy"><figcaption>Vibration sensors on the spindle head. (Piecuch &amp; Żabiński 2025, Fig. 2)</figcaption></figure>
+  <figure><img src="img/physics/paper_fig3.jpg" alt="Accelerometers mounted on the table drive housings" loading="lazy"><figcaption>Vibration sensors on the table drives. These sit on the steel's side of the cut and hear the teeth most clearly. (Piecuch &amp; Żabiński 2025, Fig. 3)</figcaption></figure>
+</div>
+<figure><img src="img/physics/vibration_tooth_hits.png" alt="Forty milliseconds of table vibration showing a repeating bump every 4.7 milliseconds; the worn cutter's trace is larger and rougher" loading="lazy"><figcaption>40 thousandths of a second of table vibration, our data. The repeating bump every 4.7 ms is one tooth hitting the steel. The worn cutter's hits are bigger and rougher.</figcaption></figure>
+<p>If you split the vibration into its rhythms, like splitting a chord into notes, you see sharp lines at exactly the machine's beats: 213 Hz for the tooth hits and its multiples. As the cutter wears, the lines grow and the background noise between them rises. A <strong>chipped tooth</strong> makes one of the four hits different from the others, so a rhythm that repeats once per turn (53 Hz) appears. In our data that once-per-turn line grew 2 to 13 times near the end in 6 of 7 cutters we checked.</p>
+<figure><img src="img/physics/vibration_spectrum.png" alt="Vibration power at each frequency for a nearly new and worn cutter; sharp peaks at multiples of 53 Hz, strongest at 213 Hz, with the worn cutter showing a higher noise floor" loading="lazy"><figcaption>The rhythms in the table vibration, our data. Solid lines mark the tooth rhythm (213 Hz) and its multiples; dotted lines mark the once-per-turn rhythm (53 Hz) and its multiples. The worn cutter has a higher noise floor across the whole range.</figcaption></figure>
+<div class="tablebox"><table>
+  <thead><tr><th></th><th>Motor current</th><th>Vibration</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Readings per second</strong></td><td>5 real updates (logged 500 times)</td><td>25,000</td></tr>
+    <tr><td><strong>Can see</strong></td><td>How hard each motor is working; entering and leaving the steel; slow rise as the cutter wears</td><td>Every tooth hit; a chipped tooth; chatter; rubbing noise</td></tr>
+    <tr><td><strong>Cannot see</strong></td><td>Anything as fast as one turn or one tooth</td><td>Steady pushing force (it only senses change)</td></tr>
+    <tr><td><strong>Cheap in a real factory?</strong></td><td>Yes. Clip-on sensors on the motor cables, no drilling.</td><td>Needs sensors glued or bolted near the cut.</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section id="life">
+<h2><span class="n">07</span>A whole life in the data</h2>
+<p>Put every cycle of every cutter side by side and the same story repeats. For the first third to half of its life nothing much changes. Then the signals bend upwards, gently at first and then sharply, until the cutter breaks. That is the runaway stage of wear from section 5, showing up in the electricity and the vibration.</p>
+<figure><img src="img/physics/life_trends.png" alt="Six panels, one line per cutter, showing table motor current and vibration spread rising over each cutter's life" loading="lazy"><figcaption>Our data, all 13 cutters. Each line is one cutter, measured relative to its own first few cycles. Top row: table (X) motor current. Bottom row: vibration spread on three sensors. The one line that starts high and drops is cutter 10 on the long holder, which shook violently from its first cycle.</figcaption></figure>
+<div class="spec">
+  <div><span class="k">Table motor current</span><span class="v">×1.4 to ×2.7</span><span class="h">by the end of life; rises in all 13 cutters, the most reliable sign</span></div>
+  <div><span class="k">Spindle current while cutting</span><span class="v">×1.2 to ×1.5</span><span class="h">more twisting effort per cut</span></div>
+  <div><span class="k">Once-per-turn vibration</span><span class="v">×2 to ×13</span><span class="h">in 6 of 7 cutters checked; the sign of a chipped tooth</span></div>
+</div>
+</section>
+
+<section id="predict">
+<h2><span class="n">08</span>So what exactly do we predict?</h2>
+<p>The whole chain, from the settings to the decision:</p>
+<div class="svgbox" role="img" aria-label="Chain: settings set the force; force wears the edge; a worn edge changes current and vibration; the model reads them and estimates the chance of breaking; the decision rule chooses keep going or change">
+  <svg viewBox="0 0 680 150">
+    <g font-size="13">
+      <rect x="4" y="40" width="112" height="64" rx="6" fill="var(--paper)" stroke="var(--ink)"/>
+      <text x="60" y="66" text-anchor="middle" class="lbl" font-weight="700">Settings</text><text x="60" y="84" text-anchor="middle" class="small">bite, depth, holder</text>
+      <rect x="140" y="40" width="112" height="64" rx="6" fill="var(--paper)" stroke="var(--ink)"/>
+      <text x="196" y="66" text-anchor="middle" class="lbl" font-weight="700">Force</text><text x="196" y="84" text-anchor="middle" class="small">on every tooth hit</text>
+      <rect x="276" y="40" width="112" height="64" rx="6" fill="var(--paper)" stroke="var(--ink)"/>
+      <text x="332" y="66" text-anchor="middle" class="lbl" font-weight="700">Wear</text><text x="332" y="84" text-anchor="middle" class="small">blunt, chipped</text>
+      <rect x="412" y="40" width="112" height="64" rx="6" fill="var(--paper)" stroke="var(--ink)"/>
+      <text x="468" y="66" text-anchor="middle" class="lbl" font-weight="700">Signals</text><text x="468" y="84" text-anchor="middle" class="small">current, vibration</text>
+      <rect x="548" y="40" width="128" height="64" rx="6" fill="var(--paper)" stroke="var(--accent)" stroke-width="2"/>
+      <text x="612" y="62" text-anchor="middle" class="lbl accent" font-weight="700">Our model</text><text x="612" y="80" text-anchor="middle" class="small">chance of breaking</text><text x="612" y="95" text-anchor="middle" class="small">in the next cycles</text>
+    </g>
+    <g stroke="var(--muted)" stroke-width="1.5" fill="none">
+      <path d="M116 72 H136"/><path d="M130 67 l6 5 l-6 5"/>
+      <path d="M252 72 H272"/><path d="M266 67 l6 5 l-6 5"/>
+      <path d="M388 72 H408"/><path d="M402 67 l6 5 l-6 5"/>
+      <path d="M524 72 H544"/><path d="M538 67 l6 5 l-6 5"/>
+    </g>
+    <text x="332" y="24" text-anchor="middle" class="small">the physics we cannot see directly</text>
+    <path d="M150 30 H514" stroke="var(--rule)" stroke-width="1"/>
+    <text x="612" y="130" text-anchor="middle" class="lbl" font-weight="700">→ keep going or change</text>
+  </svg>
+</div>
+<p>After every cycle the model reads that cycle's current and vibration, together with the settings and how much work the cutter has already done, and estimates the <strong>chance that the cutter breaks within the next 1, 3, 5 … cycles</strong>. From that one curve we get the number of cycles left (with a range) and the risk of carrying on. The decision step then weighs that risk against the cost of a planned change.</p>
+<div class="callout"><p>The model never sees the wear itself. It learns the link between what the signals look like and how close the cutter was to breaking, from cutters that were run until they broke.</p></div>
+</section>
+
+<section id="common">
+<h2><span class="n">09</span>Same physics, other machines</h2>
+<p>Our main dataset has only 13 cutter lives, so we are adding other public datasets recorded on different machines. They use different sensors and some stop at a measured wear limit instead of breakage. The physics gives us a common language for all of them:</p>
+<ul>
+  <li><strong>Work done instead of cycles.</strong> Measure a cutter's age in steel removed (cm³), because a "cycle" means something different on every machine.</li>
+  <li><strong>Fraction of life used.</strong> 0 for a new cutter, 1 at the end of its life, whichever way the dataset defines the end.</li>
+  <li><strong>Energy per cm³ of steel removed.</strong> Spindle current (or torque) divided by the steel removed. A blunt edge spends more energy on every cm³, whatever the machine or setting. In our data this number was the same across all four settings for new cutters, within about 12%.</li>
+  <li><strong>Change since the cutter was new.</strong> Compare every signal with the same cutter's first few cycles. This cancels most differences between machines and sensor mountings.</li>
+</ul>
+</section>
+
+<footer>
+  <p>Photos and diagrams marked "Piecuch &amp; Żabiński 2025" are from G. Piecuch &amp; T. Żabiński, "A new open dataset from a milling process – data for classification and estimation of tool life", <em>Scientific Data</em> 12, 650 (2025), <a href="https://doi.org/10.1038/s41597-025-04923-y">doi:10.1038/s41597-025-04923-y</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; resized. "Machining NICER's Patches", NASA Scientific Visualization Studio, public domain. Plots marked "our data" are made from the same dataset by this project (<span class="mono">scripts/01_audit.py</span>, <span class="mono">scripts/04_physics_figures.py</span>). Power and force figures are estimates from Kienzle's cutting-force formula; details in <span class="mono">research/next-phase/physics-brief.md</span>.</p>
+</footer>
+</main>
+</div>
+</body>
+</html>

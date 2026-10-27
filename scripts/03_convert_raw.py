@@ -3,8 +3,9 @@
 Reads one CSV at a time straight out of raw_data.zip, so the archive is never unzipped.
 Output: data/rzeszow_cycles/<file>.npz with
   vib      int16  [n, 8]   accelerometers at 25 kHz (raw ADC counts, lossless)
-  cur      int32  [m, 12]  currents at 500 Hz (the CSV repeats each current reading ~50 times;
-                           we keep one row per current timestamp)
+  cur      int32  [m, 12]  currents at 500 Hz (the CSV packs them beside the vibration rows;
+                           they fill only the first m rows and carry their own timestamps)
+  vib_t0_ms, cur_t_ms      timestamps; vibration is gap-free at 0.04 ms per row
   vib_names, cur_names     channel names
 
 Usage: python scripts/03_convert_raw.py [--workers 8]
@@ -37,7 +38,7 @@ def convert(member: str) -> tuple[str, int, int]:
     vib = df[vib_cols].to_numpy()
     if np.abs(vib).max() > 32767 or not np.allclose(vib, np.round(vib)):
         raise ValueError(f"{name}: vibration does not fit int16 losslessly")
-    cur_df = df.drop_duplicates("Timestamps - Current")
+    cur_df = df[df["Timestamps - Current"].notna()]
     cur = cur_df[cur_cols].to_numpy()
     tmp = dest.with_suffix(".tmp.npz")
     np.savez_compressed(
