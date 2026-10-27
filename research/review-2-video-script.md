@@ -61,7 +61,7 @@ The headings and slide notes are not spoken.
 >
 > We replayed all thirteen real cutters, cycle by cycle, with the model never having seen the cutter. Changing every N cycles let ten of thirteen cutters break. Our rule let five break and was about five percent cheaper. With only thirteen cutters that saving is not yet statistically certain. Perfect knowledge would have saved forty percent, so better prediction is where the money is.
 >
-> For one cutter, the best decision can be calculated exactly, so we used that to check our reinforcement learning. PPO came within one percent of the exact best answer. [WORKSHOP RESULT: one sentence, filled in from results/rl/workshop_lgbm.]
+> For one cutter, the best decision can be calculated exactly, so we used that to check our reinforcement learning. PPO came within one percent of the exact best answer. Then we gave PPO and DQN a small workshop of three machines. They did not beat well-tuned rules. They learned to slow the machines down, which halved breakages, but they kept doing it even when slowing did not pay. For this problem, a clear rule is the better choice, and that is a useful thing to know.
 >
 > What we learned: the signals really do carry wear, the physics transfers across factories, and the decision only gets better when the prediction gets better. Thank you.
 
