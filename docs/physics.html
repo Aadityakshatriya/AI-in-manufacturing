@@ -78,6 +78,7 @@ table { border-collapse: collapse; width: 100%; font-size: 15px; }
 th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
 th { font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: 13px; color: var(--muted); font-weight: 600; }
 td.num { font-family: var(--mono); font-size: 14px; white-space: nowrap; }
+table.wide { min-width: 680px; }
 .callout { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; margin: 6px 0 20px; }
 .callout.note { border-left-color: var(--steel); }
 .callout p:last-child { margin-bottom: 0; }
@@ -188,7 +189,7 @@ html { scroll-behavior: smooth; }
     <text x="485" y="180" text-anchor="middle" class="small">steel moves past the tool</text>
   </svg>
 </div>
-<div class="tablebox"><table>
+<div class="tablebox"><table class="wide">
   <thead><tr><th>Setting</th><th>Values</th><th>What it physically does</th><th>What happened in our data</th></tr></thead>
   <tbody>
     <tr><td><strong>Sideways bite</strong> (radial depth)</td><td class="num">4.5 or 8 mm</td><td>How much of the cutter's width is buried in the steel: 45% or 80%. A wider bite means each tooth stays in the steel longer and more teeth cut at once, so the force is higher. The cutter maker recommends at most 45%.</td><td>The 5 cutters at 8 mm lived 30–54 cycles. At 4.5 mm (normal holder) they lived 60–150. Roughly a third of the life.</td></tr>
