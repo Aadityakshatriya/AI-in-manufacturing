@@ -4,7 +4,7 @@ We are building a system that listens to a CNC milling machine while it cuts (vi
 
 ## Start here
 
-**New to the project? Read [`PROJECT_EXPLAINED.md`](PROJECT_EXPLAINED.md) top to bottom.** It starts from zero (what milling is, what a sensor is, what training a model means) and walks through the data, the models, the decision rules, how we test everything, and the plan for the next 10 days. Every technical word is explained, and there is a word list at the end.
+**New to the project? Read [`PROJECT_EXPLAINED.md`](PROJECT_EXPLAINED.md) top to bottom.** It starts from zero (what milling is, how a cutter wears, what a sensor feels) and explains what we built: the data, the autoencoder and TCN, how we test fairly, the results, the decision rule and the reinforcement-learning workshop, and what the results do and do not prove. Every technical word is explained, and there is a word list at the end.
 
 The same content as a web page, easier to read on a phone: https://aadityakshatriya.github.io/AI-in-manufacturing/ (source: [`docs/index.html`](docs/index.html))
 
