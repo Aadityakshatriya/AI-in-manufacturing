@@ -47,9 +47,46 @@ def hazard_nll(logits: torch.Tensor, event_k: torch.Tensor, observed: torch.Tens
     return -ll
 
 
-def curves(logits: np.ndarray, temperature: float = 1.0) -> dict:
-    """Hazard, survival and summaries from logits [n, K]."""
-    h = 1.0 / (1.0 + np.exp(-logits / temperature))
+def blur(h: np.ndarray, sigma: float) -> np.ndarray:
+    """Widen failure curves: blur each predicted failure time in log-time by a Gaussian of width sigma.
+
+    A model trained on 12 cutters is too sure of exactly when a cutter will fail. Blurring spreads
+    each prediction over nearby cycles (proportionally: ±10% of the predicted time for sigma = 0.1),
+    keeping the curve's centre roughly in place. sigma is chosen on cutters the model did not train on.
+    """
+    if sigma <= 0:
+        return h
+    n, horizon = h.shape
+    s = np.cumprod(1.0 - h, axis=1)
+    s_prev = np.concatenate([np.ones((n, 1)), s[:, :-1]], axis=1)
+    pmf = np.concatenate([h * s_prev, s[:, -1:]], axis=1)  # [n, K+1]; last = still alive after K
+    x = np.log(np.arange(1, horizon + 2))
+    kernel = np.exp(-0.5 * ((x[None, :] - x[:, None]) / sigma) ** 2)
+    kernel /= kernel.sum(1, keepdims=True)
+    new = pmf @ kernel
+    s_new = 1.0 - np.cumsum(new[:, :horizon], axis=1)
+    s_new_prev = np.concatenate([np.ones((n, 1)), s_new[:, :-1]], axis=1)
+    return np.clip(new[:, :horizon] / np.clip(s_new_prev, 1e-9, None), 1e-6, 1 - 1e-6)
+
+
+def nll_np(h: np.ndarray, event_k: np.ndarray) -> float:
+    """Mean negative log-likelihood of observed failures at step event_k (1-based) under hazards h."""
+    k = np.arange(1, h.shape[1] + 1)[None, :]
+    ek = np.clip(event_k, 1, h.shape[1])[:, None]
+    ll = (np.log1p(-h) * (k < ek)).sum(1) + np.log(h[np.arange(len(h)), ek[:, 0] - 1])
+    return float(-ll.mean())
+
+
+def fit_blur(h: np.ndarray, event_k: np.ndarray) -> float:
+    """Blur width that best predicts the failures of cutters the model did not train on."""
+    grid = [0.0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.7, 1.0, 1.5]
+    scores = [nll_np(blur(h, g), event_k) for g in grid]
+    return grid[int(np.argmin(scores))]
+
+
+def curves(logits: np.ndarray, temperature: float = 1.0, sigma: float = 0.0) -> dict:
+    """Hazard, survival and summaries from logits [n, K], optionally widened by blur(sigma)."""
+    h = blur(1.0 / (1.0 + np.exp(-logits / temperature)), sigma)
     s = np.cumprod(1.0 - h, axis=1)
     horizon = h.shape[1]
 

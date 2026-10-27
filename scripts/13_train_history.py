@@ -1,7 +1,8 @@
 """Train and test the history model on Rzeszów with nested leave-one-cutter-out.
 
 For each of the 13 cutters (outer fold): hide it; on the other 12, run inner leave-one-cutter-out to get
-out-of-fold predictions (used to set the conformal margins that widen the low/high estimates);
+out-of-fold predictions (used to pick the blur width for the failure curves and the conformal margins
+that widen the low/high estimates; also saved to results/predictions/nested/ for the decision layer);
 then train a 5-seed ensemble on all 12 and predict the hidden one. Folds run in parallel processes.
 
 Usage: python scripts/13_train_history.py --features {settings_age,physics,ae,physics_ae} [--seeds 5]
@@ -19,7 +20,7 @@ import pandas as pd
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from toollife.models.hazard import curves, tool_conformal_margin
+from toollife.models.hazard import curves, fit_blur, tool_conformal_margin
 from toollife.models.history import make_sequences, predict, train
 from toollife.rzeszow import ROOT
 
@@ -108,25 +109,34 @@ def run_fold(held, features, base_df, cols, seeds):
     # Inner loop: out-of-fold predictions on the 12 development cutters, for calibration only.
     oof = [fit_predict(dev[dev["tool"] != inner], dev[dev["tool"] == inner], cols, 1)[:2] for inner in sorted(dev["tool"].unique())]
     oof_rows = pd.concat([r for r, _ in oof])
-    oof_c = curves(np.concatenate([l for _, l in oof]))
+    oof_lg = np.concatenate([l for _, l in oof])
     rul_oof, tools_oof = oof_rows["rul"].to_numpy(), oof_rows["tool"].to_numpy()
+    # Blur width chosen on the 12 development cutters (each predicted by a model that never saw it).
+    sigma = fit_blur(1.0 / (1.0 + np.exp(-oof_lg)), rul_oof)
+    oof_c = curves(oof_lg, sigma=sigma)
     # Conformal widening, one score per cutter: how far below its low estimate (or above its high
     # estimate) the truth ever fell. The margin is the worst such miss seen on the other cutters.
     lo_margin = tool_conformal_margin(oof_c["rul_q10"], rul_oof, tools_oof)
     hi_margin = tool_conformal_margin(-oof_c["rul_q90"], -rul_oof, tools_oof)
 
     rows, lg, gauge = fit_predict(dev, test, cols, seeds)
-    c = curves(lg)
-    pred = rows[["tool", "age", "rul", "life", "file"]].copy()
-    pred["fold"] = held
-    for k in ("rul_q10", "rul_q50", "rul_q90", "rmst", "p_fail_1", "p_fail_3", "p_fail_5"):
-        pred[k] = c[k]
+    c = curves(lg, sigma=sigma)
+
+    def table(r, cc, role, without):
+        out = r[["tool", "age", "rul", "life", "file"]].copy()
+        out["fold"], out["role"], out["trained_without"], out["blur_sigma"] = held, role, without, sigma
+        for k in ("rul_q10", "rul_q50", "rul_q90", "rmst", "p_fail_1", "p_fail_3", "p_fail_5"):
+            out[k] = cc[k]
+        haz = pd.DataFrame(cc["hazard"][:, :60], columns=[f"hazard_{k}" for k in range(1, 61)], index=out.index)
+        return pd.concat([out, haz], axis=1)
+
+    inner = [table(r, curves(l, sigma=sigma), "inner", f"{held},{r['tool'].iloc[0]}") for r, l in oof]
+    pred = table(rows, c, "test", str(held))
     pred["rul_lower"] = np.maximum(c["rul_q10"] - max(lo_margin, 0), 0)
     pred["rul_upper"] = c["rul_q90"] + max(hi_margin, 0)
     pred["gauge"] = gauge
-    haz = pd.DataFrame(c["hazard"][:, :60], columns=[f"hazard_{k}" for k in range(1, 61)], index=pred.index)
-    print(f"cutter {held:>3}: margins -{lo_margin:.0f}/+{hi_margin:.0f} MAE(q50)={np.abs(c['rul_q50'] - rows['rul']).mean():.1f}", flush=True)
-    return pd.concat([pred, haz], axis=1)
+    print(f"cutter {held:>3}: blur {sigma:.2f} margins -{lo_margin:.0f}/+{hi_margin:.0f} MAE(q50)={np.abs(c['rul_q50'] - rows['rul']).mean():.1f}", flush=True)
+    return pred, pd.concat(inner)
 
 
 def main() -> None:
@@ -139,7 +149,16 @@ def main() -> None:
     base_df, cols = load(args.features)
     with ProcessPoolExecutor(8) as pool:
         futs = [pool.submit(run_fold, held, args.features, base_df, cols, args.seeds) for held in sorted(base_df["tool"].unique())]
-        out_rows = [f.result() for f in futs]
+        results = [f.result() for f in futs]
+    out_rows = [r for r, _ in results]
+    nested = pd.concat([r for r, _ in results] + [i for _, i in results]).reset_index(drop=True)
+    nested.insert(0, "dataset", "rzeszow")
+    nested.insert(1, "scheme", "loco")
+    nested = nested.rename(columns={"age": "run_idx"})
+    for col in ("tool", "fold"):
+        nested[col] = nested[col].astype(str)
+    (ROOT / "results" / "predictions" / "nested").mkdir(parents=True, exist_ok=True)
+    nested.to_parquet(ROOT / "results" / "predictions" / "nested" / f"history_{name}.parquet")
 
     pred = pd.concat(out_rows).reset_index(drop=True)
     pred.insert(0, "dataset", "rzeszow")

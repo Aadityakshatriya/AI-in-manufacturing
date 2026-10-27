@@ -89,8 +89,11 @@ def parse_recording(data: bytes) -> pd.DataFrame:
     """One recording CSV (header, then a unit row, then 1 kHz samples) as a DataFrame.
 
     A few recordings contain broken lines (2 values instead of 7) or a repeated header line inside
-    the data; such lines are dropped.
+    the data; such lines are dropped. Seven recordings of case 4 were published damaged (they start
+    mid-file with no header, one is binary); those raise ValueError and are marked unusable.
     """
+    if not data.startswith(b"Time,"):
+        raise ValueError("recording has no header (damaged in the published archive)")
     try:
         table = pacsv.read_csv(io.BytesIO(data), read_options=pacsv.ReadOptions(skip_rows_after_names=1, use_threads=False))
         df = table.to_pandas()
@@ -98,15 +101,22 @@ def parse_recording(data: bytes) -> pd.DataFrame:
             return df
     except (pa.ArrowInvalid, ValueError):
         pass
-    df = pd.read_csv(io.BytesIO(data), skiprows=[1], on_bad_lines="skip", dtype=str)
-    return df.apply(pd.to_numeric, errors="coerce").dropna().reset_index(drop=True)
+    df = pd.read_csv(io.BytesIO(data), skiprows=[1], on_bad_lines="skip", dtype=str, encoding="latin-1")
+    raw_rows = len(df)
+    df = df.apply(pd.to_numeric, errors="coerce").dropna().reset_index(drop=True)
+    if len(df) < 0.95 * raw_rows:
+        raise ValueError(f"recording damaged: only {len(df)} of {raw_rows} lines readable")
+    return df
 
 
 def run_features(job: tuple) -> dict:
     """Physics features of one recording. job = (zip path, member name, zip entry)."""
     path, name, entry = job
     data = zip_read(path, entry)
-    d = parse_recording(data)
+    try:
+        d = parse_recording(data)
+    except (ValueError, UnicodeDecodeError) as e:  # a damaged recording: keep the row, mark it unusable
+        return {"member": name, "signal_ok": False, "cut_time_s": np.nan, "md5": hashlib.md5(data).hexdigest(), "error": str(e)[:80]}
     rpm = float(FOLDER.search(name).group(2))
     out = {"member": name, "signal_ok": len(d) > 10 * FS, "cut_time_s": len(d) / FS,
            "md5": hashlib.md5(data).hexdigest()}
