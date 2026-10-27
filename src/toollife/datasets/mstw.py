@@ -53,6 +53,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pyarrow.csv as pacsv
 
 from toollife.datasets.common import (RAW, basic_stats, finish, order_features, parallel_map, window_rms,
@@ -85,9 +86,20 @@ def archive() -> tuple[Path, bool]:
 
 
 def parse_recording(data: bytes) -> pd.DataFrame:
-    """One recording CSV (header, then a unit row, then 1 kHz samples) as a DataFrame."""
-    table = pacsv.read_csv(io.BytesIO(data), read_options=pacsv.ReadOptions(skip_rows_after_names=1, use_threads=False))
-    return table.to_pandas()
+    """One recording CSV (header, then a unit row, then 1 kHz samples) as a DataFrame.
+
+    A few recordings contain broken lines (2 values instead of 7) or a repeated header line inside
+    the data; such lines are dropped.
+    """
+    try:
+        table = pacsv.read_csv(io.BytesIO(data), read_options=pacsv.ReadOptions(skip_rows_after_names=1, use_threads=False))
+        df = table.to_pandas()
+        if all(pd.api.types.is_numeric_dtype(t) for t in df.dtypes):
+            return df
+    except (pa.ArrowInvalid, ValueError):
+        pass
+    df = pd.read_csv(io.BytesIO(data), skiprows=[1], on_bad_lines="skip", dtype=str)
+    return df.apply(pd.to_numeric, errors="coerce").dropna().reset_index(drop=True)
 
 
 def run_features(job: tuple) -> dict:

@@ -1,7 +1,7 @@
 """Train and test the history model on Rzeszów with nested leave-one-cutter-out.
 
 For each of the 13 cutters (outer fold): hide it; on the other 12, run inner leave-one-cutter-out to get
-out-of-fold predictions (used to fit one calibration temperature and the conformal safety margin);
+out-of-fold predictions (used to set the conformal margins that widen the low/high estimates);
 then train a 5-seed ensemble on all 12 and predict the hidden one. Folds run in parallel processes.
 
 Usage: python scripts/13_train_history.py --features {settings_age,physics,ae,physics_ae} [--seeds 5]
@@ -19,7 +19,7 @@ import pandas as pd
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from toollife.models.hazard import K, curves, fit_temperature, tool_conformal_margin
+from toollife.models.hazard import curves, tool_conformal_margin
 from toollife.models.history import make_sequences, predict, train
 from toollife.rzeszow import ROOT
 
@@ -108,23 +108,24 @@ def run_fold(held, features, base_df, cols, seeds):
     # Inner loop: out-of-fold predictions on the 12 development cutters, for calibration only.
     oof = [fit_predict(dev[dev["tool"] != inner], dev[dev["tool"] == inner], cols, 1)[:2] for inner in sorted(dev["tool"].unique())]
     oof_rows = pd.concat([r for r, _ in oof])
-    oof_lg = np.concatenate([l for _, l in oof])
-    ek = np.minimum(oof_rows["rul"].to_numpy(), K)
-    temp = fit_temperature(oof_lg, ek, (oof_rows["rul"].to_numpy() <= K).astype(float))
-    oof_c = curves(oof_lg, temp)
-    margin = tool_conformal_margin(oof_c["rul_q10"], oof_rows["rul"].to_numpy(), oof_rows["tool"].to_numpy())
+    oof_c = curves(np.concatenate([l for _, l in oof]))
+    rul_oof, tools_oof = oof_rows["rul"].to_numpy(), oof_rows["tool"].to_numpy()
+    # Conformal widening, one score per cutter: how far below its low estimate (or above its high
+    # estimate) the truth ever fell. The margin is the worst such miss seen on the other cutters.
+    lo_margin = tool_conformal_margin(oof_c["rul_q10"], rul_oof, tools_oof)
+    hi_margin = tool_conformal_margin(-oof_c["rul_q90"], -rul_oof, tools_oof)
 
     rows, lg, gauge = fit_predict(dev, test, cols, seeds)
-    c = curves(lg, temp)
+    c = curves(lg)
     pred = rows[["tool", "age", "rul", "life", "file"]].copy()
     pred["fold"] = held
-    pred["temperature"] = temp
     for k in ("rul_q10", "rul_q50", "rul_q90", "rmst", "p_fail_1", "p_fail_3", "p_fail_5"):
         pred[k] = c[k]
-    pred["rul_lower_conformal"] = np.maximum(c["rul_q10"] - margin, 0)
+    pred["rul_lower"] = np.maximum(c["rul_q10"] - max(lo_margin, 0), 0)
+    pred["rul_upper"] = c["rul_q90"] + max(hi_margin, 0)
     pred["gauge"] = gauge
     haz = pd.DataFrame(c["hazard"][:, :60], columns=[f"hazard_{k}" for k in range(1, 61)], index=pred.index)
-    print(f"cutter {held:>3}: T={temp:.2f} margin={margin:.0f} MAE(q50)={np.abs(c['rul_q50'] - rows['rul']).mean():.1f}", flush=True)
+    print(f"cutter {held:>3}: margins -{lo_margin:.0f}/+{hi_margin:.0f} MAE(q50)={np.abs(c['rul_q50'] - rows['rul']).mean():.1f}", flush=True)
     return pd.concat([pred, haz], axis=1)
 
 
@@ -154,8 +155,9 @@ def main() -> None:
         m.append(dict(
             tool=t, mae=np.abs(err).mean(), mae_last20=np.abs(err[near]).mean(),
             over_last20=err[near].clip(lower=0).mean(),
-            cover80=((g["rul"] >= g["rul_q10"]) & (g["rul"] <= g["rul_q90"])).mean(),
-            lower_ok=(g["rul"] >= g["rul_lower_conformal"]).mean(),
+            cover_raw=((g["rul"] >= g["rul_q10"]) & (g["rul"] <= g["rul_q90"])).mean(),
+            cover_widened=((g["rul"] >= g["rul_lower"]) & (g["rul"] <= g["rul_upper"])).mean(),
+            width=(g["rul_upper"] - g["rul_lower"]).mean(),
             brier5=((g["p_fail_5"] - (g["rul"] <= 5)) ** 2).mean(),
         ))
     m = pd.DataFrame(m)

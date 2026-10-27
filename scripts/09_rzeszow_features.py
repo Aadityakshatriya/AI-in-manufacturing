@@ -13,8 +13,11 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from toollife.features import PATH_MM, cycle_features, load_cycle
+from toollife.features import PATH_MM, TABLE_ACC as _TABLE_ACC_NAMES, cycle_features, load_cycle
 from toollife.rzeszow import ROOT, load_table
+
+# Column-name form of the five table-side accelerometers, as used in the feature columns.
+TABLE_ACC = [n.replace(" ", "_").replace("+", "p").replace("-", "m") for n in _TABLE_ACC_NAMES]
 
 OUT = ROOT / "data" / "processed"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -70,6 +73,9 @@ def main() -> None:
             "spindle_load_abs": full["spindle_net_a"],
             "table_load_rel": full["table_cut_a__rel"],
             "energy_per_mm3_rel": full["spindle_charge_per_mm3__rel"],
+            # Shared vibration level: mean of the five table-side sensors' RMS, relative to new.
+            "vib_rms_rel": full[[f"{a}__rms__rel" for a in TABLE_ACC]].mean(axis=1),
+            "force_rel": np.nan,
         }
     )
     # Fraction of life used, on the cycle clock: every cycle is one lap of similar length, and

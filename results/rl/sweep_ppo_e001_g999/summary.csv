@@ -1,0 +1,11 @@
+policy,kind,pool,eval_n,profit_per_1000_ticks,breaks_per_1000_parts,slow_share,changes,parts,vs_dp_normal_pct
+oracle_normal,rule,test,-,93177.0,0.0,0.0,13.55,1891.7,20.7503
+dp_normal,rule,test,-,77165.0,2.6258,0.0,14.35,1757.15,0.0
+hazard_normal,rule,test,-,76104.0,2.3949,0.0,15.5,1758.45,-1.375
+fixed_normal,rule,test,-,50588.5,4.0284,0.0,24.8,1621.85,-34.4411
+ppo,rl,test,-,16415.0,4.5428,0.0,2.8,368.0,-78.7274
+oracle_normal,rule,train,-,76284.0,0.0,0.0,22.1,1823.9,26.9448
+dp_normal,rule,train,-,60092.25,1.496,0.0,26.25,1720.05,0.0
+hazard_normal,rule,train,-,56997.25,0.5558,0.0,30.4,1733.15,-5.1504
+ppo,rl,train,-,40218.75,2.0512,0.0,23.65,1272.55,-33.0717
+fixed_normal,rule,train,-,35475.25,7.5467,0.0,25.1,1491.0,-40.9653

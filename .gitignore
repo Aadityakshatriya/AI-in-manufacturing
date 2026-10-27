@@ -9,3 +9,8 @@ __pycache__/
 # Downloaded datasets (re-download with the data script)
 data/
 .venv/
+
+# Large regenerable model files and logs
+results/predictions/nested/
+results/autoencoders/*.pt
+results/*.log
