@@ -14,6 +14,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from toollife.features import PATH_MM, TABLE_ACC as _TABLE_ACC_NAMES, cycle_features, load_cycle
+from toollife.datasets.common import causal_baseline
 from toollife.rzeszow import ROOT, load_table
 
 # Column-name form of the five table-side accelerometers, as used in the feature columns.
@@ -41,14 +42,18 @@ def main() -> None:
     full = df.drop(columns=[c for c in df.columns if c.startswith(("Accelerometer", "Current"))]).merge(feats, on="file")
     full = full.sort_values(["tool", "age"]).reset_index(drop=True)
 
-    # Relative versions: divide by the median of the cutter's first 10% of cycles
-    # (at least 3 cycles), skipping cycle-1 files, which include corner clean-up.
+    # Relative versions: divide by a causal baseline, the median of the cutter's first (up to) 3 clean
+    # cycles seen so far. Cycle-1 files include corner clean-up, so they are not used as the baseline.
+    # Never uses later cycles, and never depends on how long the cutter will live.
     phys = [c for c in feats.columns if c != "file"]
     for tool, g in full.groupby("tool"):
-        clean = g[~g["file"].str.endswith("_C1")]
-        base_rows = clean.head(max(3, int(np.ceil(0.1 * len(g)))))
-        base = base_rows[phys].median()
-        full.loc[g.index, [f"{c}__rel" for c in phys]] = (g[phys] / base.replace(0, np.nan)).to_numpy()
+        clean = ~g["file"].str.endswith("_C1").to_numpy()
+        for c in phys:
+            base = causal_baseline(g[c].to_numpy(), clean)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                rel = g[c].to_numpy() / base
+            rel[~np.isfinite(rel)] = np.nan
+            full.loc[g.index, f"{c}__rel"] = rel
     full.to_parquet(OUT / "rzeszow_physics.parquet")
 
     # Common run table (PLAN.md §6).

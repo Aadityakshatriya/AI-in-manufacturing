@@ -34,7 +34,7 @@ torch.set_num_threads(2)
 PROC = ROOT / "data" / "processed"
 OUT = ROOT / "results" / "cross_dataset"
 OUT.mkdir(parents=True, exist_ok=True)
-MAX_RUNS = 150  # long LUH tools are thinned so every cutter has a comparable number of steps
+MAX_RUNS = 150  # long LUH tools are thinned to about this many steps (fixed stride per dataset)
 TABLE_ACC = ["X_Driving_axle_pZ", "X_Driving_axle_mX", "Y_Driving_axle_pZ", "Y_Driving_axle_pY", "Y_Driving_axle_mX"]
 
 
@@ -57,8 +57,12 @@ def load_all() -> pd.DataFrame:
         }))
     df = pd.concat(parts, ignore_index=True).dropna(subset=["spindle", "life_frac"])
     df = df.sort_values(["tool", "order"])
-    # Thin very long tools evenly.
-    df = df.groupby("tool", group_keys=False).apply(lambda g: g.iloc[np.linspace(0, len(g) - 1, min(len(g), MAX_RUNS)).astype(int)])
+    # Thin very long tools (LUH) with one fixed stride per dataset: keep every s-th run, with s set by
+    # the dataset's typical length. Thinning each tool to exactly MAX_RUNS steps would make a step's
+    # position reveal its fraction of life (until 28 Oct it did; spotted in review).
+    lengths = df.groupby("tool").agg(dataset=("dataset", "first"), n=("order", "size"))
+    stride = (lengths.groupby("dataset")["n"].median() / MAX_RUNS).apply(np.ceil).clip(lower=1).astype(int)
+    df = df.groupby("tool", group_keys=False).apply(lambda g: g.iloc[:: stride[g["dataset"].iloc[0]]])
     df["x_spindle"] = np.log(df["spindle"].clip(0.2, 5))
     df["has_vib"] = df["vib"].notna().astype(float)
     df["x_vib"] = np.log(df["vib"].clip(0.2, 20)).fillna(0.0)

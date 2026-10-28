@@ -1,0 +1,13 @@
+name,label,family,inputs,uses_history,what_it_assumes,mae_whole_life,mae_last20,size,train_seconds
+tcn,"TCN (stock, reference)",convolution + hazard curve,physics features + settings + age + first_ring (29),yes,"the last ~60 cycles, read through fixed sliding filters, show how close the cutter is to breaking",21.94,15.86,109511,1679
+linear_hazard,Logistic hazard (linear),statistics: discrete-time logistic hazard,physics features + settings + age + first_ring (29),no,risk is a fixed weighted sum of today's readings; the past doesn't matter,27.89,24.96,210,1527
+mlp_now,MLP on today only,dense network,physics features + settings + age + first_ring (29),no,risk is any smooth function of today's readings; the past adds nothing once today is known,27.01,19.53,14855,619
+gru,GRU,recurrent,physics features + settings + age + first_ring (29),yes,"a 64-number running summary, updated every cycle, can carry everything about the past that matters",23.19,15.29,60615,2337
+lstm,LSTM,recurrent,physics features + settings + age + first_ring (29),yes,"like the GRU, plus a separate memory cell that can hold early-life facts for a long time",21.57,14.38,77255,1020
+transformer,Causal transformer,attention,physics features + settings + age + first_ring (29),yes,"any earlier cycle may matter, and the network learns which ones to look back at",21.15,12.54,110791,3231
+tcn_direct,"TCN, direct regression",convolution + regression head,physics features + settings + age + first_ring (29),yes,"same window as the TCN, but the answer is a single number of cycles left, not a risk curve",22.27,16.12,109186,1277
+tcn_currents_only,"TCN, motor currents only",convolution + hazard curve,settings + age + 6 current features + first_ring (13),yes,the motors' electricity alone carries the wear signal,27.65,20.83,108487,1759
+tcn_vibration_only,"TCN, vibration only",convolution + hazard curve,settings + age + 16 accelerometer features + first_ring (23),yes,the accelerometers alone carry the wear signal,22.51,16.83,109127,1699
+tcn_summaries,TCN on the 120 summaries,convolution + hazard curve,120 released summaries + settings + age (126; LightGBM's inputs),yes,the dataset's own per-cycle summaries carry the wear signal as well as our physics features,19.17,10.84,115719,1596
+tcn_no_age,TCN without age,convolution + hazard curve,"physics features + settings + first_ring, no log_age (28)",yes,"wear shows in the signals themselves, so the cycle count is not needed",24.17,18.26,109447,1605
+tcn_age_only,TCN on age only,convolution + hazard curve,log_age only (1),yes,"all cutters age alike, so the cycle count alone says how much life is left",27.91,23.4,107719,1334

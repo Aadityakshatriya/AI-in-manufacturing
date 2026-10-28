@@ -7,7 +7,7 @@ Common run table (PLAN.md §6): one row per recorded run of one cutter, with
 followed by the physics features:
   spindle_load_abs  spindle load during cutting minus idle, in the dataset's own unit (spindle_unit)
   spindle_idle      the idle level that was subtracted (same unit)
-  spindle_load_rel  spindle_load_abs ÷ the same tool's median over its first 10% of runs
+  spindle_load_rel  spindle_load_abs ÷ the same tool's causal early-life baseline
   vib_<ch>_rms      vibration RMS during cutting; vib_<ch>_o1 / _tp / _hi are band RMS at spindle
                     order 1, at the tooth-pass order and its harmonics, and in the high band
   force_res_abs     mean in-plane force √(Fx²+Fy²) during cutting (force_z_abs for the axial one)
@@ -18,8 +18,9 @@ Shared features for cross-dataset models (same meaning in every dataset, NaN whe
   spindle_load_rel  spindle load ÷ the tool's early-life value
   vib_rms_rel       mean over the vibration channels of vib_<ch>_rms_rel
   force_rel         force_res_abs_rel (in-plane force ÷ early-life value)
-"Early life" = the tool's first ceil(10% of runs) runs, raised to 3 runs when that is still within
-the first quarter of its runs (so short NASA lives use 1–2 runs, long ones never fewer than 3).
+"Early life" = a causal baseline: at each run, the median of the tool's first (up to) 3 runs seen so
+far. It never looks ahead and never depends on how long the tool will live (an earlier version used
+the first 10% of the tool's runs, which quietly leaked the tool's life length into the features).
 
 life_frac runs on the cumulative-cutting-time clock: cum_time_s of the run ÷ cum_time_s of the
 end-of-life run, so the end-of-life run is exactly 1. Runs recorded after end of life are dropped.
@@ -52,7 +53,6 @@ BASE_COLS = [
 
 SHARED = ["spindle_load_rel", "vib_rms_rel", "force_rel"]
 
-BASELINE_FRAC = 0.10  # "early life" = the tool's first 10% of runs
 
 
 # ---------- parallel map ----------
@@ -311,16 +311,34 @@ def finalize(df: pd.DataFrame, rel_cols: list[str]) -> pd.DataFrame:
     return out
 
 
-def baseline_runs(n: int, frac: float = BASELINE_FRAC) -> int:
-    """How many early runs form a tool's baseline: ceil(frac·n), at least 3 if that is <= n/4."""
-    return max(1, math.ceil(frac * n), min(3, n // 4))
+BASELINE_RUNS = 3  # "when new" = the tool's first 3 runs with a value
 
 
-def add_relative(df: pd.DataFrame, cols: list[str], frac: float = BASELINE_FRAC) -> pd.DataFrame:
-    """<col>_rel = col ÷ the median of the same tool's first `frac` of runs.
+def causal_baseline(values: np.ndarray, usable: np.ndarray | None = None, k: int = BASELINE_RUNS) -> np.ndarray:
+    """Baseline for every run, using only runs up to and including it (never later ones).
 
-    The baseline uses the first k = baseline_runs(len) runs; if they are all missing it takes the first
-    k runs that do have a value. spindle_load_abs becomes spindle_load_rel.
+    At run t the baseline is the median of the first min(k, seen so far) usable runs with a value.
+    It never depends on how long the tool will live, so the "relative to new" features carry no
+    information about the future. Before any usable run has been seen, all runs so far are used.
+    """
+    values = np.asarray(values, dtype=float)
+    usable = np.ones(len(values), bool) if usable is None else np.asarray(usable, bool)
+    out = np.full(len(values), np.nan)
+    picked, seen = [], []
+    for t, v in enumerate(values):
+        if np.isfinite(v):
+            seen.append(v)
+            if usable[t] and len(picked) < k:
+                picked.append(v)
+        pool = picked if picked else seen
+        out[t] = np.median(pool) if pool else np.nan
+    return out
+
+
+def add_relative(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+    """<col>_rel = col ÷ the same tool's causal early-life baseline (see causal_baseline).
+
+    spindle_load_abs becomes spindle_load_rel. Rows must be in time order within each tool.
     """
     df = df.copy()
     new = {}
@@ -330,13 +348,11 @@ def add_relative(df: pd.DataFrame, cols: list[str], frac: float = BASELINE_FRAC)
         name = "spindle_load_rel" if col == "spindle_load_abs" else f"{col}_rel"
         rel = pd.Series(np.nan, index=df.index)
         for _, g in df.groupby("tool", sort=False):
-            k = baseline_runs(len(g), frac)
-            vals = g[col].iloc[:k].dropna()
-            if vals.empty:
-                vals = g[col].dropna().iloc[:k]
-            base = vals.median() if not vals.empty else np.nan
-            if base and np.isfinite(base) and base != 0:
-                rel.loc[g.index] = g[col] / base
+            base = causal_baseline(g[col].to_numpy())
+            with np.errstate(divide="ignore", invalid="ignore"):
+                r = g[col].to_numpy() / base
+            r[~np.isfinite(r) | (base == 0)] = np.nan
+            rel.loc[g.index] = r
         new[name] = rel
     for name, rel in new.items():
         df[name] = rel

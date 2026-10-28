@@ -29,7 +29,6 @@ Assumptions and facts (our own look at the files):
 - With 10 rows per burst every per-run number is noisy; kurtosis of 10 values is mostly noise.
 """
 
-import math
 from pathlib import Path
 
 import numpy as np
@@ -88,13 +87,18 @@ def tool_runs(path: Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+IDLE_BURSTS = 10  # bursts used to find the spindle's idle current
+
 def load(workers: int = 8) -> pd.DataFrame:
     """One row per spindle-on burst, for all 24 tools, end of life = operator's call."""
     files = sorted(DIR.glob("*.csv"))
     parts = parallel_map(tool_runs, files, workers)
     df = pd.concat(parts, ignore_index=True).sort_values(["tool", "run_native"]).reset_index(drop=True)
     for tool, g in df.groupby("tool", sort=False):
-        k = max(1, math.ceil(0.1 * len(g)))
+        # Idle level from the tool's first IDLE_BURSTS bursts: a fixed count, so it never depends on
+        # how long the tool will eventually last. (Until 28 Oct this used the first 10% of the
+        # tool's bursts, which quietly used its future life length.)
+        k = min(len(g), IDLE_BURSTS)
         df.loc[g.index, "spindle_idle"] = float(np.percentile(np.concatenate(g["_currents"].iloc[:k].to_list()), 5))
     # Bursts whose mean current is below the idle level caught only a spin-up or spin-down.
     df = df[df["current_on_mean"] >= df["spindle_idle"]].reset_index(drop=True)

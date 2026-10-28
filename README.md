@@ -11,12 +11,12 @@ The same content as a web page, easier to read on a phone: https://aadityakshatr
 ## Where the project stands
 
 - **August–September 2026:** chose the project, found and checked the dataset, wrote the plan, presented at Review 1.
-- **27–28 October 2026:** built it. A CNN autoencoder and a TCN predict how many cycles a cutter has left from its vibration and motor current; a decision rule and a reinforcement-learning workshop turn that into keep-or-change decisions. Four other public datasets were added. The agreed scope is in [`PLAN.md`](PLAN.md); the physics is explained at [`docs/physics.html`](https://aadityakshatriya.github.io/AI-in-manufacturing/physics.html).
+- **27–28 October 2026:** built it. A CNN autoencoder and a TCN predict how many cycles a cutter has left from its vibration and motor current; a decision rule and a reinforcement-learning workshop turn that into keep-or-change decisions. Four other public datasets were added. On 28 October we reviewed everything: fixed three leaks, tested 30 other models the same way as ours, and added a learning curve; every number in the explainer is after those fixes. The agreed scope is in [`PLAN.md`](PLAN.md); the physics is explained at [`docs/physics.html`](https://aadityakshatriya.github.io/AI-in-manufacturing/physics.html).
 - **Review 2:** the video script is [`research/review-2-video-script.md`](research/review-2-video-script.md). Results tables are under `results/` (models, decisions, cross_dataset, rl) and the figures in `results/figures/`.
 
 ## Space and computing power
 
-**Space and computing power are not a problem for this project.** The raw sensor data is about 25 GB and the neural networks train best on a GPU; Aditya is arranging storage and compute. Do not shrink or skip any part of the plan because of data size or hardware.
+**Space and computing power are not a problem for this project.** The raw sensor data is a 24 GB download (112 GB unpacked). The models are small: everything ran on a laptop and one 16-core cloud machine, with no GPU needed. Do not shrink or skip any part of the plan because of data size or hardware.
 
 ## The data
 

@@ -27,7 +27,10 @@ warnings.filterwarnings("ignore")
 OUT = ROOT / "results" / "baselines"
 OUT.mkdir(parents=True, exist_ok=True)
 
+# Same rows as every other model: cycles the cutter survived (rul >= 1; after the breaking cycle
+# there is no decision left), one row per cycle (cutter 2 has cycle 34 recorded twice).
 df = usable(load_table())
+df = df[df["rul"] >= 1].sort_values(["tool", "age"]).drop_duplicates(["tool", "age"]).reset_index(drop=True)
 SENSORS = sensor_columns(df)
 LGB_PARAMS = dict(
     n_estimators=400, learning_rate=0.03, num_leaves=15, min_child_samples=20,
@@ -45,10 +48,12 @@ def settings_age(train, test):
     cols = [c for c in SETTING_COLS if lives[c].nunique() > 1]
     fit_df = lives[cols + ["life"]].assign(event=1)
     model = WeibullAFTFitter(penalizer=0.1).fit(fit_df, duration_col="life", event_col="event")
-    # Median of total life given the cutter has survived `age + 1` cycles, minus what it has used.
+    # Median remaining life given the cutter has survived `age + 1` cycles. lifelines already returns
+    # the time remaining after `conditional_after`, which is exactly rul = life - age - 1. (Until
+    # 28 Oct this subtracted 1 more, an off-by-one spotted in review.)
     survived = test["age"].to_numpy() + 1
-    med_total = model.predict_median(test[cols], conditional_after=survived).to_numpy().ravel()
-    return np.clip(med_total - 1, 0, None)
+    med_remaining = model.predict_median(test[cols], conditional_after=survived).to_numpy().ravel()
+    return np.clip(med_remaining, 0, None)
 
 
 def lgbm(features):

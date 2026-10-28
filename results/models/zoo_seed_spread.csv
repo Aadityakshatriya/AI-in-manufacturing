@@ -1,0 +1,97 @@
+name,model,mae_whole_life,mae_last20
+tcn,seed 0 alone,23.74,18.25
+tcn,seed 1 alone,21.73,16.81
+tcn,seed 2 alone,24.12,17.49
+tcn,seed 3 alone,21.72,15.9
+tcn,seed 4 alone,23.05,16.83
+tcn,single seeds: min,21.72,15.9
+tcn,single seeds: max,24.12,18.25
+tcn,5-seed ensemble,21.94,15.86
+linear_hazard,seed 0 alone,27.94,24.98
+linear_hazard,seed 1 alone,27.85,25.0
+linear_hazard,seed 2 alone,27.86,25.01
+linear_hazard,seed 3 alone,27.81,24.91
+linear_hazard,seed 4 alone,27.95,24.95
+linear_hazard,single seeds: min,27.81,24.91
+linear_hazard,single seeds: max,27.95,25.01
+linear_hazard,5-seed ensemble,27.89,24.96
+mlp_now,seed 0 alone,25.25,18.39
+mlp_now,seed 1 alone,28.79,21.83
+mlp_now,seed 2 alone,27.09,19.07
+mlp_now,seed 3 alone,28.54,22.04
+mlp_now,seed 4 alone,26.89,19.31
+mlp_now,single seeds: min,25.25,18.39
+mlp_now,single seeds: max,28.79,22.04
+mlp_now,5-seed ensemble,27.01,19.53
+gru,seed 0 alone,22.71,15.3
+gru,seed 1 alone,24.54,16.95
+gru,seed 2 alone,25.88,17.19
+gru,seed 3 alone,22.83,14.61
+gru,seed 4 alone,22.86,15.82
+gru,single seeds: min,22.71,14.61
+gru,single seeds: max,25.88,17.19
+gru,5-seed ensemble,23.19,15.29
+lstm,seed 0 alone,20.74,14.65
+lstm,seed 1 alone,22.85,15.72
+lstm,seed 2 alone,24.05,17.37
+lstm,seed 3 alone,24.19,16.25
+lstm,seed 4 alone,21.55,14.47
+lstm,single seeds: min,20.74,14.47
+lstm,single seeds: max,24.19,17.37
+lstm,5-seed ensemble,21.57,14.38
+transformer,seed 0 alone,21.82,12.55
+transformer,seed 1 alone,21.47,13.44
+transformer,seed 2 alone,22.68,14.09
+transformer,seed 3 alone,23.04,14.27
+transformer,seed 4 alone,20.78,12.89
+transformer,single seeds: min,20.78,12.55
+transformer,single seeds: max,23.04,14.27
+transformer,5-seed ensemble,21.15,12.54
+tcn_direct,seed 0 alone,23.11,16.45
+tcn_direct,seed 1 alone,22.7,16.33
+tcn_direct,seed 2 alone,22.77,16.07
+tcn_direct,seed 3 alone,22.45,17.2
+tcn_direct,seed 4 alone,21.48,15.21
+tcn_direct,single seeds: min,21.48,15.21
+tcn_direct,single seeds: max,23.11,17.2
+tcn_direct,5-seed ensemble,22.27,16.12
+tcn_currents_only,seed 0 alone,27.6,20.47
+tcn_currents_only,seed 1 alone,27.29,21.2
+tcn_currents_only,seed 2 alone,28.12,22.28
+tcn_currents_only,seed 3 alone,26.87,21.09
+tcn_currents_only,seed 4 alone,27.62,21.55
+tcn_currents_only,single seeds: min,26.87,20.47
+tcn_currents_only,single seeds: max,28.12,22.28
+tcn_currents_only,5-seed ensemble,27.65,20.83
+tcn_vibration_only,seed 0 alone,23.27,16.7
+tcn_vibration_only,seed 1 alone,25.76,20.86
+tcn_vibration_only,seed 2 alone,23.19,16.35
+tcn_vibration_only,seed 3 alone,26.64,21.44
+tcn_vibration_only,seed 4 alone,23.02,18.12
+tcn_vibration_only,single seeds: min,23.02,16.35
+tcn_vibration_only,single seeds: max,26.64,21.44
+tcn_vibration_only,5-seed ensemble,22.51,16.83
+tcn_summaries,seed 0 alone,22.04,12.57
+tcn_summaries,seed 1 alone,20.03,11.31
+tcn_summaries,seed 2 alone,21.57,13.65
+tcn_summaries,seed 3 alone,20.93,11.98
+tcn_summaries,seed 4 alone,20.43,13.63
+tcn_summaries,single seeds: min,20.03,11.31
+tcn_summaries,single seeds: max,22.04,13.65
+tcn_summaries,5-seed ensemble,19.17,10.84
+tcn_no_age,seed 0 alone,24.0,19.55
+tcn_no_age,seed 1 alone,24.74,19.42
+tcn_no_age,seed 2 alone,24.44,18.66
+tcn_no_age,seed 3 alone,24.52,19.67
+tcn_no_age,seed 4 alone,23.85,19.33
+tcn_no_age,single seeds: min,23.85,18.66
+tcn_no_age,single seeds: max,24.74,19.67
+tcn_no_age,5-seed ensemble,24.17,18.26
+tcn_age_only,seed 0 alone,27.97,23.09
+tcn_age_only,seed 1 alone,28.8,25.1
+tcn_age_only,seed 2 alone,28.66,23.15
+tcn_age_only,seed 3 alone,29.16,23.31
+tcn_age_only,seed 4 alone,28.12,25.92
+tcn_age_only,single seeds: min,27.97,23.09
+tcn_age_only,single seeds: max,29.16,25.92
+tcn_age_only,5-seed ensemble,27.91,23.4

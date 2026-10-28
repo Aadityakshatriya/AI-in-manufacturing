@@ -11,7 +11,7 @@ It is trained only on cycles from the early, healthy part of each training cutte
   - the health score is how badly the decoder rebuilds the signal. A cutter that still sounds
     healthy is rebuilt well; as it wears, its sound drifts away from what the network learned and
     the error grows.
-About 3.8 million learned numbers in total.
+About 4.0 million learned numbers in total (3,994,341).
 """
 
 import torch

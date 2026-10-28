@@ -1,0 +1,121 @@
+comparison,metric,mean_diff,ci_low,ci_high,tcn_better_on,cutters
+TCN: physics features minus TCN: autoencoder health score,whole_life,-2.45,-6.29,1.85,9,13
+TCN: physics features minus TCN: autoencoder health score,last20,1.64,-5.97,10.46,6,13
+TCN: physics features minus TCN: autoencoder health score,middle_third,-5.1,-9.79,0.0,9,13
+TCN: physics features minus TCN: autoencoder health score,over_last20,1.87,-6.32,11.44,5,13
+TCN: physics features minus TCN: physics + autoencoder,whole_life,-1.9,-4.49,-0.06,8,13
+TCN: physics features minus TCN: physics + autoencoder,last20,-2.85,-8.92,0.49,5,13
+TCN: physics features minus TCN: physics + autoencoder,middle_third,-2.45,-5.08,-0.53,10,13
+TCN: physics features minus TCN: physics + autoencoder,over_last20,-2.82,-8.94,0.55,4,13
+TCN: physics features minus TCN: settings + age only,whole_life,-12.06,-27.37,-2.5,10,13
+TCN: physics features minus TCN: settings + age only,last20,-7.22,-22.0,5.98,7,13
+TCN: physics features minus TCN: settings + age only,middle_third,-15.76,-31.65,-5.82,12,13
+TCN: physics features minus TCN: settings + age only,over_last20,-5.87,-21.36,8.95,5,13
+TCN: physics features minus LightGBM: 120 summaries only,whole_life,0.39,-2.91,3.56,4,13
+TCN: physics features minus LightGBM: 120 summaries only,last20,0.02,-7.32,8.8,8,13
+TCN: physics features minus LightGBM: 120 summaries only,middle_third,0.15,-3.33,3.15,5,13
+TCN: physics features minus LightGBM: 120 summaries only,over_last20,-2.11,-9.52,6.64,11,13
+TCN: physics features minus Survival model: settings + age,whole_life,-4.39,-23.69,11.86,8,13
+TCN: physics features minus Survival model: settings + age,last20,-8.0,-22.48,5.07,7,13
+TCN: physics features minus Survival model: settings + age,middle_third,-4.39,-25.17,13.18,8,13
+TCN: physics features minus Survival model: settings + age,over_last20,-9.99,-24.6,3.08,9,13
+TCN: physics features minus LightGBM: same inputs as the TCN,whole_life,-4.79,-13.19,1.03,8,13
+TCN: physics features minus LightGBM: same inputs as the TCN,last20,-2.26,-6.57,1.94,8,13
+TCN: physics features minus LightGBM: same inputs as the TCN,middle_third,-5.29,-15.29,1.69,8,13
+TCN: physics features minus LightGBM: same inputs as the TCN,over_last20,-4.53,-8.28,-0.88,11,13
+TCN: physics features minus Zoo: Elastic net,whole_life,-9.21,-23.27,0.9,7,13
+TCN: physics features minus Zoo: Elastic net,last20,-11.44,-19.05,-4.69,11,13
+TCN: physics features minus Zoo: Elastic net,middle_third,-9.31,-25.43,2.88,7,13
+TCN: physics features minus Zoo: Elastic net,over_last20,-12.37,-20.11,-5.72,10,13
+TCN: physics features minus Zoo: Gaussian process,whole_life,-9.95,-16.67,-2.42,12,13
+TCN: physics features minus Zoo: Gaussian process,last20,-9.05,-18.72,-0.8,9,13
+TCN: physics features minus Zoo: Gaussian process,middle_third,-9.16,-17.13,-0.06,11,13
+TCN: physics features minus Zoo: Gaussian process,over_last20,-8.48,-18.77,0.54,7,13
+TCN: physics features minus Zoo: GRU,whole_life,-1.26,-3.77,0.64,8,13
+TCN: physics features minus Zoo: GRU,last20,0.57,-0.87,2.09,3,13
+TCN: physics features minus Zoo: GRU,middle_third,-1.8,-5.78,0.73,7,13
+TCN: physics features minus Zoo: GRU,over_last20,0.44,-1.07,2.0,3,13
+TCN: physics features minus Zoo: Health indicator + failure threshold,whole_life,-7.36,-13.93,-0.82,8,13
+TCN: physics features minus Zoo: Health indicator + failure threshold,last20,-0.79,-8.62,9.21,8,13
+TCN: physics features minus Zoo: Health indicator + failure threshold,middle_third,-7.72,-17.46,2.07,8,13
+TCN: physics features minus Zoo: Health indicator + failure threshold,over_last20,-1.25,-9.72,9.11,7,13
+TCN: physics features minus Zoo: Trajectory similarity (k nearest stretches),whole_life,-2.18,-12.01,6.6,9,13
+TCN: physics features minus Zoo: Trajectory similarity (k nearest stretches),last20,1.38,-3.97,8.57,8,13
+TCN: physics features minus Zoo: Trajectory similarity (k nearest stretches),middle_third,-4.17,-17.25,6.1,6,13
+TCN: physics features minus Zoo: Trajectory similarity (k nearest stretches),over_last20,-0.56,-5.64,7.22,11,13
+TCN: physics features minus Zoo: LightGBM + hand-made history,whole_life,-3.32,-12.86,3.61,8,13
+TCN: physics features minus Zoo: LightGBM + hand-made history,last20,-0.92,-3.97,1.75,8,13
+TCN: physics features minus Zoo: LightGBM + hand-made history,middle_third,-2.85,-14.89,6.82,9,13
+TCN: physics features minus Zoo: LightGBM + hand-made history,over_last20,-3.33,-5.55,-1.24,11,13
+TCN: physics features minus Zoo: LightGBM + history: 120 summaries + settings + age,whole_life,-2.09,-5.59,1.56,8,13
+TCN: physics features minus Zoo: LightGBM + history: 120 summaries + settings + age,last20,1.07,-6.08,8.8,6,13
+TCN: physics features minus Zoo: LightGBM + history: 120 summaries + settings + age,middle_third,-3.25,-7.94,0.71,8,13
+TCN: physics features minus Zoo: LightGBM + history: 120 summaries + settings + age,over_last20,-1.22,-8.1,6.83,10,13
+TCN: physics features minus Zoo: LightGBM quantiles (10/50/90%),whole_life,-3.74,-12.21,2.18,8,13
+TCN: physics features minus Zoo: LightGBM quantiles (10/50/90%),last20,-1.92,-5.74,1.94,7,13
+TCN: physics features minus Zoo: LightGBM quantiles (10/50/90%),middle_third,-3.76,-13.69,3.51,7,13
+TCN: physics features minus Zoo: LightGBM quantiles (10/50/90%),over_last20,-4.32,-7.62,-1.07,10,13
+TCN: physics features minus Zoo: LightGBM: 120 summaries + settings + age,whole_life,-0.97,-4.09,1.74,6,13
+TCN: physics features minus Zoo: LightGBM: 120 summaries + settings + age,last20,-0.06,-5.94,7.41,8,13
+TCN: physics features minus Zoo: LightGBM: 120 summaries + settings + age,middle_third,-1.99,-5.71,0.91,8,13
+TCN: physics features minus Zoo: LightGBM: 120 summaries + settings + age,over_last20,-2.27,-7.92,5.09,11,13
+TCN: physics features minus Zoo: Logistic hazard (linear),whole_life,-5.95,-23.76,5.71,7,13
+TCN: physics features minus Zoo: Logistic hazard (linear),last20,-9.09,-26.27,0.84,7,13
+TCN: physics features minus Zoo: Logistic hazard (linear),middle_third,-6.09,-25.26,8.27,7,13
+TCN: physics features minus Zoo: Logistic hazard (linear),over_last20,-10.19,-28.14,0.95,8,13
+TCN: physics features minus Zoo: LSTM,whole_life,0.36,-2.13,3.08,5,13
+TCN: physics features minus Zoo: LSTM,last20,1.48,-0.63,4.11,4,13
+TCN: physics features minus Zoo: LSTM,middle_third,0.37,-3.02,3.37,5,13
+TCN: physics features minus Zoo: LSTM,over_last20,1.3,-0.89,3.94,4,13
+TCN: physics features minus Zoo: Mean residual life (age only),whole_life,-12.28,-24.17,0.18,8,13
+TCN: physics features minus Zoo: Mean residual life (age only),last20,-20.47,-34.01,-5.44,9,13
+TCN: physics features minus Zoo: Mean residual life (age only),middle_third,-7.63,-22.35,7.53,8,13
+TCN: physics features minus Zoo: Mean residual life (age only),over_last20,-23.25,-36.52,-8.68,11,13
+TCN: physics features minus Zoo: MLP on today only,whole_life,-5.07,-17.79,2.71,6,13
+TCN: physics features minus Zoo: MLP on today only,last20,-3.66,-10.81,0.97,6,13
+TCN: physics features minus Zoo: MLP on today only,middle_third,-5.11,-20.6,4.65,6,13
+TCN: physics features minus Zoo: MLP on today only,over_last20,-4.66,-11.5,-0.02,9,13
+TCN: physics features minus Zoo: Random forest,whole_life,-3.13,-10.6,2.84,7,13
+TCN: physics features minus Zoo: Random forest,last20,-1.45,-5.58,2.6,7,13
+TCN: physics features minus Zoo: Random forest,middle_third,-3.46,-12.95,4.66,7,13
+TCN: physics features minus Zoo: Random forest,over_last20,-4.25,-8.12,-0.48,10,13
+TCN: physics features minus Zoo: 1-D CNN on raw table vibration,whole_life,-9.79,-20.63,0.12,10,13
+TCN: physics features minus Zoo: 1-D CNN on raw table vibration,last20,-6.37,-18.05,6.78,9,13
+TCN: physics features minus Zoo: 1-D CNN on raw table vibration,middle_third,-10.49,-25.13,3.05,9,13
+TCN: physics features minus Zoo: 1-D CNN on raw table vibration,over_last20,-9.69,-21.4,4.29,12,13
+TCN: physics features minus Zoo: Ridge regression,whole_life,-10.24,-21.9,-0.56,9,13
+TCN: physics features minus Zoo: Ridge regression,last20,-12.46,-19.11,-6.22,11,13
+TCN: physics features minus Zoo: Ridge regression,middle_third,-10.31,-24.77,1.53,8,13
+TCN: physics features minus Zoo: Ridge regression,over_last20,-13.2,-20.19,-6.55,9,13
+TCN: physics features minus Zoo: Support vector regression (RBF),whole_life,-6.54,-16.67,-0.15,10,13
+TCN: physics features minus Zoo: Support vector regression (RBF),last20,-10.85,-18.15,-4.75,11,13
+TCN: physics features minus Zoo: Support vector regression (RBF),middle_third,-5.65,-18.42,2.13,7,13
+TCN: physics features minus Zoo: Support vector regression (RBF),over_last20,-12.94,-19.93,-7.34,12,13
+TCN: physics features minus Zoo: TCN on age only,whole_life,-5.97,-9.56,-2.69,10,13
+TCN: physics features minus Zoo: TCN on age only,last20,-7.54,-17.69,4.37,8,13
+TCN: physics features minus Zoo: TCN on age only,middle_third,-0.69,-6.76,5.56,6,13
+TCN: physics features minus Zoo: TCN on age only,over_last20,-10.43,-20.04,1.36,11,13
+"TCN: physics features minus Zoo: TCN, motor currents only",whole_life,-5.72,-21.69,4.14,7,13
+"TCN: physics features minus Zoo: TCN, motor currents only",last20,-4.97,-17.4,2.94,5,13
+"TCN: physics features minus Zoo: TCN, motor currents only",middle_third,-7.13,-24.11,3.19,7,13
+"TCN: physics features minus Zoo: TCN, motor currents only",over_last20,-5.24,-17.82,2.75,5,13
+"TCN: physics features minus Zoo: TCN, direct regression",whole_life,-0.33,-4.27,2.62,5,13
+"TCN: physics features minus Zoo: TCN, direct regression",last20,-0.25,-1.38,0.94,8,13
+"TCN: physics features minus Zoo: TCN, direct regression",middle_third,-0.64,-6.82,3.29,3,13
+"TCN: physics features minus Zoo: TCN, direct regression",over_last20,-0.34,-1.66,0.86,7,13
+TCN: physics features minus Zoo: TCN without age,whole_life,-2.23,-6.32,0.28,8,13
+TCN: physics features minus Zoo: TCN without age,last20,-2.39,-6.34,-0.13,8,13
+TCN: physics features minus Zoo: TCN without age,middle_third,-3.0,-9.59,0.82,6,13
+TCN: physics features minus Zoo: TCN without age,over_last20,-2.41,-6.38,-0.13,7,13
+TCN: physics features minus Zoo: TCN on the 120 summaries,whole_life,2.77,-1.54,7.35,5,13
+TCN: physics features minus Zoo: TCN on the 120 summaries,last20,5.02,-3.57,16.34,5,13
+TCN: physics features minus Zoo: TCN on the 120 summaries,middle_third,0.43,-3.49,4.47,6,13
+TCN: physics features minus Zoo: TCN on the 120 summaries,over_last20,4.65,-4.03,15.94,6,13
+"TCN: physics features minus Zoo: TCN, vibration only",whole_life,-0.58,-3.09,1.87,6,13
+"TCN: physics features minus Zoo: TCN, vibration only",last20,-0.96,-4.56,1.29,3,13
+"TCN: physics features minus Zoo: TCN, vibration only",middle_third,-1.17,-3.87,1.84,11,13
+"TCN: physics features minus Zoo: TCN, vibration only",over_last20,-0.95,-4.58,1.34,4,13
+TCN: physics features minus Zoo: Causal transformer,whole_life,0.79,-1.76,3.48,6,13
+TCN: physics features minus Zoo: Causal transformer,last20,3.33,-0.6,8.13,3,13
+TCN: physics features minus Zoo: Causal transformer,middle_third,0.33,-2.04,3.0,7,13
+TCN: physics features minus Zoo: Causal transformer,over_last20,2.92,-0.99,8.0,5,13

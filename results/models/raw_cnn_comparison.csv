@@ -1,0 +1,6 @@
+name,frac_mae,spearman,cutters_spearman_over_05,rul_mae_whole_life,rul_mae_last20,rul_over_last20,size,train_seconds
+raw_cnn,0.159,0.888,12,31.731,22.23,21.671,"220,737 weights",267.5
+lgbm_physics,0.133,0.968,13,30.466,17.881,15.907,400 trees x 15 leaves,10.5
+mlp_physics,0.162,0.899,13,50.344,17.475,13.572,"4,033 weights",1.1
+ref_lgbm_settings_age,0.159,0.982,13,33.68,19.11,17.884,400 trees x 15 leaves,4.3
+ref_lgbm_physics_no_age,0.146,0.951,13,37.371,19.54,17.739,400 trees x 15 leaves,5.3

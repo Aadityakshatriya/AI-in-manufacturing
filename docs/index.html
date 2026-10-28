@@ -120,6 +120,16 @@ figure img { display: block; width: 100%; height: auto; border-radius: 6px; bord
 figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
 code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 4px; border-radius: 3px; }
 hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
+figure { margin: 8px 0 22px; }
+figure img { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--rule); background: #fff; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
+code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 4px; border-radius: 3px; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
+figure { margin: 8px 0 22px; }
+figure img { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--rule); background: #fff; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
+code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 4px; border-radius: 3px; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 </style>
 </head>
 <body>
@@ -137,6 +147,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <li><a href="#from-prediction-to-decision">From prediction to decision</a></li>
 <li><a href="#reinforcement-learning">Reinforcement learning</a></li>
 <li><a href="#what-we-can-and-cannot-claim">What we can and cannot claim</a></li>
+<li><a href="#questions-a-reviewer-might-ask">Questions a reviewer might ask</a></li>
 <li><a href="#where-everything-is">Where everything is</a></li>
 <li><a href="#word-list">Word list</a></li>
   </ol>
@@ -155,6 +166,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <h2><span class="n">01</span>The whole project in one paragraph</h2>
 
 <p>A CNC milling machine cuts steel with a small spinning tool called a cutter. The cutter wears a little on every cut and eventually breaks. Change it too early and you waste money; change it too late and it snaps in the middle of a part. We built a system that reads the machine's motor current and vibration after every cut, estimates how many more cuts the cutter can survive and how likely it is to break soon, and then decides: <strong>keep going</strong> or <strong>change the cutter now</strong>. We tested every part on cutters the system had never seen.</p>
+<p><strong>What we found, in short:</strong> the signals carry wear on every machine we checked. The settings of the cut already explain most of a cutter's life; the sensors add most near the end of life and when something unusual happens. Thirty other models tested the same way did no better than ours beyond luck, and the biggest limit is that only 13 cutters were run until they broke.</p>
 <div class="diagram"><pre class="mermaid">flowchart LR
     A[Settings: how deep and wide each cut is, holder length, steel hardness] --&gt; B[Force on every tooth]
     B --&gt; C[Wear: the edge goes blunt, then chips]
@@ -172,7 +184,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <p>A <strong>CNC machine</strong> (Computer Numerical Control) is a machine tool moved by a computer program. Ours does <strong>milling</strong>: a cutting tool spins fast and is pushed along a path, shaving metal off a steel block. The cutting tool is an <strong>end mill</strong>, a 10 mm carbide rod with four spiral cutting edges called <strong>teeth</strong>. It is held in a <strong>holder</strong> that fits into the machine's spinning shaft, the <strong>spindle</strong>.</p>
 <p>The cutter spins at 3,200 turns a minute, which is 53 turns a second. With four teeth, the steel is hit 213 times a second. Each tooth shaves a chip about 0.05 mm thick, thinner than a human hair.</p>
 <h3>One cycle</h3>
-<p>The steel block is cut away ring by ring. The cutter travels once around the outside of the block, removing a ring of steel; that one lap is <strong>one cycle</strong>, about 31 seconds of cutting. Then it moves in and does the next ring. A cutter does cycle after cycle until it breaks. All its cycles from new to broken are its <strong>lifecycle</strong>.</p>
+<p>The steel block is cut away ring by ring. The cutter travels once around the outside of the block, removing a ring of steel; that one lap is <strong>one cycle</strong>, about 31 seconds of actual cutting (each recording, including moving between rings, lasts one to two minutes). Then it moves in and does the next ring. A cutter does cycle after cycle until it breaks. All its cycles from new to broken are its <strong>lifecycle</strong>.</p>
 <h3>How a cutter wears</h3>
 <p>Every tooth hit is a small hammer blow at several hundred degrees. Over hundreds of thousands of hits:</p>
 <ul>
@@ -274,11 +286,12 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <figure><img src="img/physics/currents_one_cycle.png" alt="Motor currents over one cycle, nearly new vs worn cutter" loading="lazy"><figcaption>Motor currents over one cycle, nearly new vs worn cutter</figcaption></figure>
 <p>What we measured across all 13 normal cutters, each compared with its own first cycles:</p>
 <ul>
-<li>table motor current rose in <strong>all 13</strong>, by 1.4 to 2.7 times by the end of life;</li>
-<li>vibration rose too, and the once-per-turn beat grew 2 to 13 times near the end in 6 of 7 cutters we checked;</li>
+<li>table motor current rose in <strong>all 13</strong>: over the last 10% of life it was 1.3 to 2.7 times its value when new;</li>
+<li>vibration rose too, and the once-per-turn beat at least doubled over the last 10% of life in 10 of 13 cutters;</li>
 <li>the signals stay flat for the first third to half of life, then bend upwards: the runaway stage of wear, showing up in the electricity and the vibration.</li>
 </ul>
 <figure><img src="img/physics/life_trends.png" alt="Signals relative to each cutter's first cycles, one line per cutter" loading="lazy"><figcaption>Signals relative to each cutter's first cycles, one line per cutter</figcaption></figure>
+<p><strong>Is the rise wear, or just where the cutter is in the block?</strong> Inside each layer the rings get smaller towards the middle, so a signal could change with ring position rather than with wear. For each cutter we removed the straight-line effect of ring number from both the signal and the fraction of life used, and correlated what was left. The table current still tracked life strongly (average 0.94 on a scale where 1 is perfect; above 0.5 in 12 of 13 cutters), and so did spindle current (0.79) and table vibration (0.84). The rise is wear, not position (<code>scripts/19_position_check.py</code>).</p>
 
 </section>
 <section id="the-data-and-where-it-came-from">
@@ -290,7 +303,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <li>14 cutters, each run from new until it broke, on a Haas VF-1 milling machine cutting hardened steel</li>
 <li>968 recorded cycles</li>
 <li>20 sensor channels: 8 vibration (25,000 readings a second) and 12 motor currents</li>
-<li>112 GB of raw recordings, plus a small table of 120 summary numbers per cycle</li>
+<li>a 24 GB download that unpacks to 112 GB of raw recordings, plus a small table of 120 summary numbers per cycle</li>
 </ul>
 <p>One cutter broke on its very first cycle, so it has no wear history; we keep it aside. That leaves <strong>13 cutter lives</strong>. 968 rows sounds like a lot, but it is really 13 life stories, because cycles of the same cutter are near-copies of each other.</p>
 <h3>Four more datasets from other machines</h3>
@@ -360,7 +373,14 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
     C --&gt; E
     D --&gt; E
 </pre></div>
-<p>With only 13 cutters, differences of a few cycles between models are within the noise. We say so wherever it matters.</p>
+<p>With only 13 cutters, differences of a few cycles between models are within the noise. To check, we resample the 13 cutters at random 5,000 times (a <strong>paired bootstrap</strong>: both models are always judged on the same resampled cutters) and see whether the gap between two models could be zero. We say so wherever it matters.</p>
+<h3>Three mistakes we found in our own work, and fixed</h3>
+<p>Reviewing everything before this presentation, we found three problems. All results in this document are after the fixes.</p>
+<ol>
+<li><strong>"Compared with when the cutter was new" peeked at the future.</strong> We measured "new" as the first 10% of each cutter's life, but on a real machine you do not know how long the cutter will live, so you cannot know where its first 10% ends. Now "new" is the first three cycles seen so far. (The leak did not flatter us: with it, the main model was slightly worse, 21.3 cycles of error against 20.5 for a one-seed check.) The same mistake was hiding in how one other dataset (VMC 650) measured its idle current, and in how long recordings from another (LUH) were thinned; both fixed.</li>
+<li><strong>The autoencoders that scored the training cutters had heard the hidden cutter.</strong> Now, in each test, every health score the model sees (for training cutters and the hidden one) comes from an autoencoder that never heard either (15 autoencoders in all). This leak did flatter us: the TCN on the health score went from 22.6 cycles of error to 24.4 once it was fixed.</li>
+<li><strong>A divide-by-zero on cutter 10.</strong> It is the only cutter on the long holder. When it was hidden, "holder length" never varied in training, and scaling it divided by almost zero, so the network saw a huge number. Its score had been arbitrary; now an input that never varies in training is set to zero.</li>
+</ol>
 
 </section>
 <section id="the-models">
@@ -370,8 +390,8 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <p>Simple methods the real models must beat:</p>
 <ul>
 <li><strong>Change every N cycles</strong>, with N tuned on the training cutters. Roughly what workshops do today.</li>
-<li><strong>Settings and age only</strong>: a survival model that knows the cutter's settings and how many cycles it has done, and no sensor data. If sensors cannot beat this, they add nothing.</li>
-<li><strong>LightGBM</strong>: a standard model made of many small decision trees, given the 120 summary numbers per cycle.</li>
+<li><strong>Settings and age only</strong>: a <strong>survival model</strong> (a Weibull model, the standard statistics model for how long things last) that knows the cutter's settings and how many cycles it has done, and no sensor data. If sensors cannot beat this, they add nothing.</li>
+<li><strong>LightGBM</strong>: a standard model made of many small decision trees, given the 120 summary numbers per cycle that the dataset's authors released.</li>
 </ul>
 <h3>Model 1: a CNN autoencoder that learned healthy cutting</h3>
 <p>An <strong>autoencoder</strong> is a network trained to <strong>squeeze its input into a few numbers and then rebuild the input from those numbers</strong>. It has two halves:</p>
@@ -382,16 +402,67 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <p>It is trained with no labels at all: the only goal is to rebuild its input well. It has about <strong>4 million</strong> learned numbers. The useful trick: we trained it <strong>only on the healthy first 30% of the training cutters' lives</strong>. So it learns what healthy cutting sounds like. When a cutter wears, its sound drifts away from what the network learned, and the rebuild gets worse. The size of the rebuild error is a <strong>health score</strong>.</p>
 <p>To keep it honest, we trained five autoencoders, each without a different group of cutters, and every cutter is scored by an autoencoder that never heard it.</p>
 <figure><img src="img/health_vs_life.png" alt="Rebuild error relative to when new, on cutters the autoencoder never heard" loading="lazy"><figcaption>Rebuild error relative to when new, on cutters the autoencoder never heard</figcaption></figure>
-<p><strong>Result:</strong> on cutters it never heard, the health score rose steadily with wear in 12 of 13 cutters, reaching 3 to 17 times its starting level. The exception is cutter 10 on the long holder, which shook violently from its first cycle, so its sound was never "healthy" to begin with.</p>
+<p><strong>Result:</strong> on cutters it never heard, the health score rose steadily with wear in 12 of 13 cutters, reaching several times its starting level. The exception is cutter 10 on the long holder, which shook violently from its first cycle, so its sound was never "healthy" to begin with.</p>
+<p><strong>Did it need 4 million learned numbers?</strong> No. We built four simpler health scores the same way (learned only from healthy cutting of other cutters) and scored all five with the standard yardsticks for a health indicator: does it only go up (<strong>monotonicity</strong>), do all cutters follow a similar path (<strong>trendability</strong>), and does it end at a similar level when cutters fail (<strong>prognosability</strong>); 1 is best for each.</p>
+<div class="tablebox"><table>
+<thead>
+<tr>
+<th>Health score</th>
+<th style="text-align: right;">Only goes up</th>
+<th style="text-align: right;">Similar path across cutters (worst pair)</th>
+<th style="text-align: right;">Similar level at failure</th>
+<th style="text-align: right;">Rises in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PCA on the raw vibration (a straight-line autoencoder)</td>
+<td style="text-align: right;">0.57</td>
+<td style="text-align: right;">0.62</td>
+<td style="text-align: right;">0.69</td>
+<td style="text-align: right;">12 of 13</td>
+</tr>
+<tr>
+<td>PCA on the vibration spectrum</td>
+<td style="text-align: right;">0.41</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">0.70</td>
+<td style="text-align: right;">12 of 13</td>
+</tr>
+<tr>
+<td><strong>Distance from healthy, on our physics features</strong> (Mahalanobis)</td>
+<td style="text-align: right;"><strong>0.58</strong></td>
+<td style="text-align: right;"><strong>0.74</strong></td>
+<td style="text-align: right;"><strong>0.81</strong></td>
+<td style="text-align: right;"><strong>13 of 13</strong></td>
+</tr>
+<tr>
+<td>Our CNN autoencoder (4 million numbers)</td>
+<td style="text-align: right;">0.48</td>
+<td style="text-align: right;">0.47</td>
+<td style="text-align: right;">0.70</td>
+<td style="text-align: right;">12 of 13</td>
+</tr>
+<tr>
+<td>Table motor current alone, no model</td>
+<td style="text-align: right;">0.51</td>
+<td style="text-align: right;">0.51</td>
+<td style="text-align: right;">0.68</td>
+<td style="text-align: right;">13 of 13</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>PCA</strong> (principal component analysis) is the straight-line version of an autoencoder: it squeezes the signal into 64 numbers using only weighted sums. It did as well as our 4-million-number network, slightly better. So most of the wear signal is simple: the cut gets louder and its energy shifts, which a straight-line model already captures. The best health score was the simplest idea of all: how far today's physics features are from the cloud of healthy cycles. The rebuild-error scores miss cutter 10, because they compare it with <em>other</em> cutters' healthy sound; the table current and the distance score catch it, because they compare it with its own start.</p>
+<figure><img src="img/results/health_indicators.png" alt="Five health scores on cutters their model never saw" loading="lazy"><figcaption>Five health scores on cutters their model never saw</figcaption></figure>
 <h3>Model 2: a TCN that reads the cutter's history and predicts</h3>
 <p>A <strong>TCN</strong> (temporal convolutional network) is a network that reads a sequence in order, here the sequence of a cutter's cycles. It is built from 1-D convolutions along the cycles that are:</p>
 <ul>
 <li><strong>causal</strong>: each prediction uses only this cycle and earlier ones, never later ones, just as on a real machine;</li>
-<li><strong>dilated</strong>: each layer looks further back than the last (gaps of 1, 2, 4, then 8 cycles), so after 4 layers it takes in about the last 31 cycles.</li>
+<li><strong>dilated</strong>: each layer looks further back than the last (gaps of 1, 2, 4, then 8 cycles), so after 4 layers (each with two convolutions) it takes in about the last 60 cycles.</li>
 </ul>
-<p>After every cycle, it takes about 30 numbers for that cycle: physics features from the motors and vibration (table and spindle current while cutting, energy spent per mm³ of steel, vibration levels at the tooth rhythm and the once-per-turn rhythm, each relative to when the cutter was new), the settings, and the cutter's age. Its output is the risk curve described in section 3. It has about 100,000 learned numbers, deliberately small because only 12 cutters are available to learn from each time. We train 5 copies with different random starts and average them.</p>
+<p>After every cycle, it takes about 30 numbers for that cycle: physics features from the motors and vibration (table and spindle current while cutting, energy spent per mm³ of steel, vibration levels at the tooth rhythm and the once-per-turn rhythm, each relative to when the cutter was new), the settings, and the cutter's age. Its output is the risk curve described in section 3. It has about 110,000 learned numbers, deliberately small because only 12 cutters are available to learn from each time. We train 5 copies with different random starts and average them.</p>
 <figure><img src="img/results/models.png" alt="Remaining-life error on cutters hidden from training" loading="lazy"><figcaption>Remaining-life error on cutters hidden from training</figcaption></figure>
-<p><strong>Results</strong> (average error in cycles; lower is better):</p>
+<p><strong>Results</strong> (average error in cycles left, on the 13 hidden cutters; every model scored on exactly the same cycles; lower is better):</p>
 <div class="tablebox"><table>
 <thead>
 <tr>
@@ -403,51 +474,242 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 </thead>
 <tbody>
 <tr>
-<td><strong>TCN on physics features</strong></td>
-<td style="text-align: right;"><strong>20.9</strong></td>
-<td style="text-align: right;"><strong>13.6</strong></td>
-<td style="text-align: right;"><strong>9.7</strong></td>
+<td><strong>TCN on physics features (our main model, chosen before any comparison)</strong></td>
+<td style="text-align: right;"><strong>21.9</strong></td>
+<td style="text-align: right;"><strong>15.9</strong></td>
+<td style="text-align: right;"><strong>12.0</strong></td>
 </tr>
 <tr>
-<td>LightGBM on the 120 summaries</td>
-<td style="text-align: right;">20.2</td>
-<td style="text-align: right;">14.3</td>
-<td style="text-align: right;">12.8</td>
+<td>LightGBM on the 120 released summaries</td>
+<td style="text-align: right;">21.6</td>
+<td style="text-align: right;">15.8</td>
+<td style="text-align: right;">14.1</td>
 </tr>
 <tr>
-<td>TCN on autoencoder fingerprint + health score</td>
-<td style="text-align: right;">22.6</td>
-<td style="text-align: right;">14.6</td>
-<td style="text-align: right;">10.9</td>
+<td>LightGBM on the TCN's physics features</td>
+<td style="text-align: right;">26.7</td>
+<td style="text-align: right;">18.1</td>
+<td style="text-align: right;">16.5</td>
 </tr>
 <tr>
-<td>TCN on physics + autoencoder</td>
-<td style="text-align: right;">24.5</td>
-<td style="text-align: right;">17.8</td>
-<td style="text-align: right;">14.0</td>
+<td>TCN on the autoencoder's health score + settings + age</td>
+<td style="text-align: right;">24.4</td>
+<td style="text-align: right;">14.2</td>
+<td style="text-align: right;">10.1</td>
 </tr>
 <tr>
-<td>TCN on settings + age only</td>
-<td style="text-align: right;">25.3</td>
-<td style="text-align: right;">14.6</td>
-<td style="text-align: right;">9.3</td>
+<td>TCN on physics features + the autoencoder's health score</td>
+<td style="text-align: right;">23.8</td>
+<td style="text-align: right;">18.7</td>
+<td style="text-align: right;">14.8</td>
 </tr>
 <tr>
-<td>Survival model on settings + age</td>
-<td style="text-align: right;">26.2</td>
-<td style="text-align: right;">23.3</td>
-<td style="text-align: right;">21.4</td>
+<td>Survival model on settings + age (no sensors)</td>
+<td style="text-align: right;">26.3</td>
+<td style="text-align: right;">23.9</td>
+<td style="text-align: right;">22.0</td>
+</tr>
+<tr>
+<td>TCN on age only (no sensors, no settings)</td>
+<td style="text-align: right;">27.9</td>
+<td style="text-align: right;">23.4</td>
+<td style="text-align: right;">22.4</td>
 </tr>
 </tbody>
 </table></div>
+<p>The TCN trained with one random start instead of five scores between 21.7 and 24.1, so differences of about 2 cycles are just luck. With 13 cutters, the paired bootstrap (section 6) is what decides whether a gap is real.</p>
+<figure><img src="img/results/settings_vs_sensors.png" alt="Settings alone vs sensors" loading="lazy"><figcaption>Settings alone vs sensors</figcaption></figure>
 <p>What this means:</p>
 <ul>
-<li>The sensors add real information beyond the settings and age.</li>
-<li>The TCN on physics features is level with LightGBM overall and better near the end of life, where decisions are made; it also over-estimates the cycles left less often there, which is the dangerous mistake.</li>
-<li>The autoencoder's outputs carry wear information on their own (22.6 vs 25.3 for settings + age), but <strong>adding them on top of the physics features made the TCN worse</strong>. With 12 training cutters, more inputs mean more room to memorise the training cutters.</li>
-<li><strong>How good is 20.9 cycles?</strong> On average the error is about 27% of a cutter's life (median 21%). It is good on short-lived cutters (8–17%) and poor on the longest-lived ones (35–45%), because almost no training cutter lived as long as cutters 7, 9 and 105.</li>
-<li><strong>The ranges.</strong> The model's own low-to-high range is too confident: it contains the true value only 12% of the time. We widen it by the worst miss seen on the other cutters (<strong>conformal calibration</strong>); the widened range then contains the truth 95% of the time, but it is about 116 cycles wide. That width is the honest answer with 13 cutters. We tried two ways of making the risk curves less confident (blurring them by an amount chosen on the training cutters); both made the middle estimate worse, so we did not use them.</li>
+<li><strong>Settings explain most of a cutter's life.</strong> On the 12 cutters whose settings also appear among the training cutters, the survival model that knows only the settings and the age is off by 18 cycles over the whole life, <em>better</em> than the TCN's 21. Early in life there is no wear yet for the sensors to see, and the TCN guesses worse than the settings do.</li>
+<li><strong>Sensors help near the end, where decisions are made</strong>: in the last 20% of life the TCN is off by 13 cycles on those 12 cutters, against 16 for the settings model.</li>
+<li><strong>Sensors are essential when something happens that the settings cannot predict.</strong> Cutter 10 is the only cutter on the long holder. When it is hidden, no training cutter used that holder, so the settings models predict a normal life: they are off by about 123 cycles. The TCN sees the cutter shaking and is off by 28. A real workshop will always meet holders, materials and settings it has no history for; that is the case for sensors.</li>
+<li><strong>Same model, with and without sensors:</strong> the TCN on age alone is off by 27.9; with the sensor features, 21.9. The 6-cycle gain is real (95% bootstrap interval 2.6 to 9.5 cycles; better on 10 of 13 cutters).</li>
+<li><strong>The autoencoder's health score did not add to the physics features.</strong> Adding it made the TCN slightly worse (23.8 against 21.9; 95% interval of the gap 0.1 to 4.5 cycles, physics alone better on 8 of 13 cutters). On its own with settings and age, it was worse over the whole life (24.4) but the best TCN input in the last 20% (14.2 against 15.9), a gap that could be luck (interval −6.0 to +10.5). The health-score table above explains why: the autoencoder's score is a noisier wear signal than simple features.</li>
+<li><strong>TCN vs LightGBM: a tie.</strong> On the 120 summaries LightGBM matches our TCN (21.6 vs 21.9); given the TCN's own features, LightGBM is worse (26.7). Each model does best on the inputs it suits, and the two best combinations are level.</li>
+<li><strong>How good is 21.9 cycles?</strong> It is good on short-lived cutters and poor on the longest-lived ones (cutters 7, 9 and 105, which lived 125–150 cycles), because almost no training cutter lived that long. The model is also poor on cutters unlike the others, such as cutter 102.</li>
+<li><strong>The ranges.</strong> The model's own low-to-high range (10% to 90%) is too confident: it contains the true value only 13% of the time. We widen it by the worst miss seen on the other cutters, a conformal-style correction; the widened range then contains the truth 97% of the time, and stays fully inside for the whole life of 12 of 13 cutters, but it is about 115 cycles wide. That is honest but too wide to act on, which is why the decisions use the risk curve itself, not this range. (A formal conformal guarantee does not quite apply, because the margins come from simpler models trained inside each test.) We also tried two ways of making the risk curves less confident; both made the middle estimate worse, so we did not use them.</li>
 </ul>
+<h3>Every other model we tried</h3>
+<p>To answer "did you just pick a model you liked?", we ran <strong>30 other models</strong> through exactly the same test: the same 13 hidden cutters, the same cycles, the same scoring. The TCN on physics features was fixed as our main model <strong>before</strong> this comparison, and we did not switch to whichever came out best, because picking the best of 30 on the test cutters would itself be a kind of leak: with this many tries, one will look better by luck.</p>
+<figure><img src="img/results/zoo.png" alt="Every model we tried" loading="lazy"><figcaption>Every model we tried</figcaption></figure>
+<div class="tablebox"><table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Model</th>
+<th style="text-align: right;">Whole life</th>
+<th style="text-align: right;">Last 20%</th>
+<th>What it assumes about how a cutter dies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No sensors</td>
+<td>Survival model on settings + age</td>
+<td style="text-align: right;">26.3</td>
+<td style="text-align: right;">23.9</td>
+<td>Settings fix how long a cutter lasts; nothing else matters</td>
+</tr>
+<tr>
+<td></td>
+<td>Average remaining life at this age</td>
+<td style="text-align: right;">34.2</td>
+<td style="text-align: right;">36.3</td>
+<td>All cutters are alike; only age matters</td>
+</tr>
+<tr>
+<td>Classical</td>
+<td>Health indicator + threshold</td>
+<td style="text-align: right;">29.3</td>
+<td style="text-align: right;">16.7</td>
+<td>The table current climbs with wear and the cutter dies when it crosses a fixed level</td>
+</tr>
+<tr>
+<td></td>
+<td>Trajectory similarity (nearest past cutters)</td>
+<td style="text-align: right;">24.1</td>
+<td style="text-align: right;">14.5</td>
+<td>A cutter dies like the past cutters whose history looked most like it</td>
+</tr>
+<tr>
+<td></td>
+<td>Ridge / elastic net (straight-line models)</td>
+<td style="text-align: right;">32.2 / 31.1</td>
+<td style="text-align: right;">28.3 / 27.3</td>
+<td>Remaining life is a weighted sum of today's readings</td>
+</tr>
+<tr>
+<td></td>
+<td>Support vector regression / Gaussian process</td>
+<td style="text-align: right;">28.5 / 31.9</td>
+<td style="text-align: right;">26.7 / 24.9</td>
+<td>Remaining life varies smoothly with today's readings</td>
+</tr>
+<tr>
+<td></td>
+<td>Random forest / LightGBM</td>
+<td style="text-align: right;">25.1 / 26.7</td>
+<td style="text-align: right;">17.3 / 18.1</td>
+<td>Wear is a set of thresholds on today's readings</td>
+</tr>
+<tr>
+<td></td>
+<td>LightGBM + hand-made history (recent averages and slopes)</td>
+<td style="text-align: right;">25.2</td>
+<td style="text-align: right;">16.8</td>
+<td>As above, plus how fast the readings are changing</td>
+</tr>
+<tr>
+<td>Neural, same inputs as the TCN</td>
+<td>Linear risk model (no history)</td>
+<td style="text-align: right;">27.9</td>
+<td style="text-align: right;">25.0</td>
+<td>Today's readings set the risk; the past does not matter</td>
+</tr>
+<tr>
+<td></td>
+<td>Small network on today only (no history)</td>
+<td style="text-align: right;">27.0</td>
+<td style="text-align: right;">19.5</td>
+<td>Same, but allowing curved relationships</td>
+</tr>
+<tr>
+<td></td>
+<td>GRU / LSTM (recurrent networks)</td>
+<td style="text-align: right;">23.2 / 21.6</td>
+<td style="text-align: right;">15.3 / 14.4</td>
+<td>A running memory of the whole past tracks accumulated damage</td>
+</tr>
+<tr>
+<td></td>
+<td>Transformer</td>
+<td style="text-align: right;">21.1</td>
+<td style="text-align: right;">12.5</td>
+<td>The model can look back at any particular past cycle (for example, when a chip first appeared)</td>
+</tr>
+<tr>
+<td></td>
+<td>TCN predicting cycles left directly, no risk curve</td>
+<td style="text-align: right;">22.3</td>
+<td style="text-align: right;">16.1</td>
+<td>Same memory, asked for one number instead of a curve</td>
+</tr>
+<tr>
+<td>Which inputs</td>
+<td>TCN on vibration only / motor currents only</td>
+<td style="text-align: right;">22.5 / 27.6</td>
+<td style="text-align: right;">16.8 / 20.8</td>
+<td>Shaking (vibration) vs force (current) carries the wear signal</td>
+</tr>
+<tr>
+<td></td>
+<td>TCN without the age input</td>
+<td style="text-align: right;">24.2</td>
+<td style="text-align: right;">18.3</td>
+<td>The signals alone know how worn the cutter is</td>
+</tr>
+<tr>
+<td></td>
+<td>TCN on the 120 released summaries</td>
+<td style="text-align: right;"><strong>19.2</strong></td>
+<td style="text-align: right;"><strong>10.8</strong></td>
+<td>More, rawer statistics of every sensor, instead of our 29 physics features</td>
+</tr>
+<tr>
+<td>Raw signal</td>
+<td>1-D CNN trained end to end on raw vibration</td>
+<td style="text-align: right;">31.7</td>
+<td style="text-align: right;">22.2</td>
+<td>The network finds its own features in the raw sound (tested with 5 groups of cutters, not one at a time)</td>
+</tr>
+</tbody>
+</table></div>
+<p>What the zoo tells us:</p>
+<ul>
+<li><strong>The architecture hardly matters.</strong> TCN, LSTM, GRU and transformer are all within about a cycle of each other, inside the single-start spread of 21.7 to 24.1, and every bootstrap interval of their differences includes zero. The transformer was best in the last 20% (12.5), but with 13 cutters that gap could be luck (interval −0.7 to 8.3 cycles).</li>
+<li><strong>What the model is given matters more.</strong> The same TCN on the dataset's 120 released summaries scored best of all, 19.2. Its 2.8-cycle edge over our physics features is within the noise (interval −1.5 to 7.3), but it suggests our 29 hand-picked features leave some information out. We report it rather than switch to it.</li>
+<li><strong>Memory matters, mainly for the unusual cutter.</strong> The neural models without history (the linear risk model and the network on today only) are 5 to 6 cycles worse overall, and almost all of that is cutter 10: on the other 12 cutters they are level with the TCN (19.5 and 20.7 against 21.4).</li>
+<li><strong>Straight-line models are clearly worse</strong> (ridge, elastic net, SVR, Gaussian process: 28 to 32). The link between the signals and life is not a straight line.</li>
+<li><strong>The classic prognostics method, a threshold on a health indicator, is useless early and decent late</strong> (41 cycles off in the first third of life, 17 in the last third): it only knows anything once the current has started climbing towards the failure level.</li>
+<li><strong>Vibration alone is about as good as everything together</strong> (22.5); motor currents alone are worse (27.6), and again almost all of that is cutter 10, whose problem was shaking.</li>
+<li><strong>The model does not just count cycles</strong>: on age alone it is clearly worse (27.9), and without age, a little worse (24.2).</li>
+<li><strong>Training a CNN directly on the raw vibration did not beat hand-made features</strong> with 10 to 11 training cutters. Its error matched "settings + age only"; it found wear in the sound but not better than our features.</li>
+</ul>
+<p><strong>Would more cutters help? Yes, clearly.</strong> We retrained the TCN on a random 4, 6 or 9 of the 12 training cutters (three different draws each) and tested on the same hidden cutters:</p>
+<div class="tablebox"><table>
+<thead>
+<tr>
+<th style="text-align: right;">Training cutters</th>
+<th style="text-align: right;">Whole life</th>
+<th style="text-align: right;">Last 20%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">34.8</td>
+<td style="text-align: right;">26.5</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">34.4</td>
+<td style="text-align: right;">25.6</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">29.3 (27.9 to 30.4 across draws)</td>
+<td style="text-align: right;">21.4</td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">21.8</td>
+<td style="text-align: right;">16.0</td>
+</tr>
+</tbody>
+</table></div>
+<figure><img src="img/results/learning_curve.png" alt="The TCN's error when it learns from fewer cutters" loading="lazy"><figcaption>The TCN's error when it learns from fewer cutters</figcaption></figure>
+<p>The error is still falling steeply at 12, with no sign of flattening. So the limit of this project is the number of cutter lives, not the model: every extra cutter run to failure would make the predictions better. This is also why the architecture hardly matters: with 12 examples to learn from, no model can learn much more than the others. (<code>scripts/24_learning_curve.py</code>, two random starts per model.)</p>
 <p>Three real cutters, replayed cycle by cycle:</p>
 <figure><img src="img/results/replay_cutters.png" alt="Predicted vs true cycles left for three hidden cutters" loading="lazy"><figcaption>Predicted vs true cycles left for three hidden cutters</figcaption></figure>
 <h3>Experiment: does what other machines teach transfer to ours?</h3>
@@ -457,28 +719,30 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <tr>
 <th>Trained on</th>
 <th style="text-align: right;">Error in fraction of life</th>
-<th style="text-align: right;">How well its estimate rises with wear (0 to 1)</th>
+<th style="text-align: right;">How well its estimate rises with wear (median over cutters, 1 = perfectly)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Our cutters only</td>
-<td style="text-align: right;">0.140</td>
-<td style="text-align: right;">0.86</td>
+<td style="text-align: right;">0.172</td>
+<td style="text-align: right;">0.99</td>
 </tr>
 <tr>
 <td><strong>The four other datasets only, never our machine</strong></td>
-<td style="text-align: right;"><strong>0.146</strong></td>
-<td style="text-align: right;"><strong>0.89</strong></td>
+<td style="text-align: right;"><strong>0.182</strong></td>
+<td style="text-align: right;"><strong>0.78</strong></td>
 </tr>
 <tr>
 <td>Ours + the other four</td>
-<td style="text-align: right;">0.135</td>
-<td style="text-align: right;">0.92</td>
+<td style="text-align: right;">0.153</td>
+<td style="text-align: right;">0.98</td>
 </tr>
 </tbody>
 </table></div>
-<p>Guessing 0.5 every time would score 0.25. <strong>A model that never saw our machine tracked wear on our cutters as well as one trained on our own data</strong>, and combining both was best. Hiding each whole dataset in turn, the estimate still rose with wear on every unseen machine (0.72–0.91), though its absolute scale was off on some, mainly because "end of life" means different things in different datasets.</p>
+<p>Guessing 0.5 every time would score 0.25. <strong>A model that never saw our machine still tracked wear on our cutters</strong>, with an error close to that of a model trained on our own data (the 0.01 difference is within the noise: 95% interval −0.04 to +0.06), though it ranked the cycles less cleanly. Adding the other machines to ours gave the lowest error, but with 13 cutters that improvement is not yet certain (interval −0.04 to +0.01).</p>
+<p>Hiding each whole dataset in turn, the estimate still rose with wear on every unseen machine (median 0.70 to 1.00), but its absolute scale was off on two of them: on NASA and the VMC 650 shop it was worse than guessing (0.44 and 0.40), mainly because "end of life" means different things there (a wear limit, or the operator's call) than in ours (breakage).</p>
+<p>The raw signals agree: on every machine at least one of the two rose with wear. Spindle load rose clearly on NASA and Hannover (rank correlation with life 0.97 each), less on the VMC shop (0.57) and ours (0.72), and hardly on MSTW (0.14), where vibration carried the wear instead (0.96). On NASA, vibration even fell slightly (−0.25).</p>
 <figure><img src="img/results/cross_dataset.png" alt="Life-fraction error on our cutters by training data" loading="lazy"><figcaption>Life-fraction error on our cutters by training data</figcaption></figure>
 
 </section>
@@ -519,12 +783,16 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <h3>Results: replaying 13 real cutters</h3>
 <p>For each hidden cutter, we replay its real life cycle by cycle. The rule only ever sees the model's predictions up to that moment, and because we know when that cutter really broke, the outcome is exact. Only the costs are assumed.</p>
 <figure><img src="img/results/decisions.png" alt="Cost per good cycle at typical Indian costs" loading="lazy"><figcaption>Cost per good cycle at typical Indian costs</figcaption></figure>
-<p>At typical Indian costs:</p>
+<p>The rule is the same for every model, so the only thing that changes between the bars is whose risk curves it is given.</p>
+<p>At typical Indian costs (breakage about twice a planned change):</p>
 <ul>
-<li>changing every N cycles let <strong>10 of 13</strong> cutters break; our rule let <strong>5</strong> break and was <strong>about 5% cheaper</strong>. With only 13 cutters, that saving is not yet statistically certain;</li>
-<li>perfect knowledge of the breaking point would save <strong>40%</strong>. That gap is the value of better prediction.</li>
+<li><strong>Changing every N cycles</strong> let <strong>10 of 13</strong> cutters break. <strong>Our rule on the TCN's risk curves</strong> let <strong>5</strong> break and was <strong>6% cheaper</strong> (₹93 against ₹99 per good cycle). With only 13 cutters that saving is not yet certain: the 95% interval runs from 10% dearer to 21% cheaper.</li>
+<li><strong>Same network, with and without sensors:</strong> the TCN that knows only settings and age makes the rule cost ₹111. With the sensor features it costs ₹93: <strong>16% cheaper</strong> (95% interval 2% to 29%), and cheaper in <strong>all 24</strong> cost settings. This is the clearest money value of the sensors that we can show.</li>
+<li><strong>But a simple survival model on settings and age is about as good</strong> (₹97, 7 breakages), and across the 24 cost settings it is cheaper than the TCN in 20, by more when breakage is very expensive. The reason is that the decision needs <strong>honest probabilities</strong>, not just a good middle estimate. The survival model is a statistics model built to give calibrated chances of failure; the TCN's risk curves are too confident (section 7: its own range holds the truth only 13% of the time). When a breakage costs 10 or 30 times a planned change, a too-confident curve leads to the wrong call more often.</li>
+<li><strong>Perfect knowledge</strong> of the breaking point would cost ₹59, <strong>40% less</strong> than every N cycles. That gap is the value of better, and better-calibrated, prediction.</li>
 </ul>
-<p>Across the 24 cost settings, the tuned rule on the TCN's risk curves was cheaper than "every N cycles" in 19.</p>
+<p>Across all 24 cost settings, our rule on the TCN's curves was cheaper than every N cycles in 19.</p>
+<p><strong>One version of the rule we dropped.</strong> We also tried tuning the rule's one number (the price of a good cycle) by searching for the value that worked best on the training cutters. With only 12 training cutters, the search was unstable: the chosen value ranged from 17 to 9,500 between tests, and on two cutters it told the machine to change a brand-new cutter after one cycle. The plain rule sets that number by a standard calculation instead of a search: the price of a good cycle is whatever the rule itself achieves on the training cutters at the given costs, repeated until it stops changing. It is stable, so that is the one we use for every model.</p>
 
 </section>
 <section id="reinforcement-learning">
@@ -532,7 +800,11 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 
 <p><strong>Reinforcement learning (RL)</strong> trains a decision-maker by trial and error: it acts, receives a score (here, profit in rupees), and slowly learns which actions score best. We used two standard methods: <strong>PPO</strong> (proximal policy optimisation) and <strong>DQN</strong> (deep Q-network).</p>
 <h3>The check: one cutter</h3>
-<p>For a single cutter with keep-or-change, the exact best rule can be calculated, so RL is not needed there. We used it as a test: if RL cannot match the exact answer, something is wrong. <strong>PPO came within 1% of the exact answer.</strong> DQN stayed about 10% short.</p>
+<p>For a single cutter with keep-or-change, the exact best rule can be calculated, so RL is not needed there. We used it as a test of our RL setup, in two worlds:</p>
+<ul>
+<li><strong>A simulated world where cutters break exactly as the risk curve predicts.</strong> Here the exact rule is truly the best possible, so RL should approach it. PPO came within <strong>2%</strong> of it on held-out cutters (the best of three training settings, on one split of the cutters); DQN was <strong>12%</strong> short.</li>
+<li><strong>Replays of real cutters</strong>, where the curve is only an estimate. Here PPO was <strong>30%</strong> and DQN <strong>18%</strong> below the exact rule computed from the curves. RL learns from the simulator it is given; when the simulator is imperfect, so is what it learns.</li>
+</ul>
 <h3>The workshop</h3>
 <p>RL only makes sense when decisions interact. We built a small simulated workshop:</p>
 <ul>
@@ -541,7 +813,8 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <li>actions for each machine: <strong>run</strong>, <strong>slow down 20%</strong>, or <strong>change the cutter</strong>;</li>
 <li>reward: profit in rupees.</li>
 </ul>
-<p>Slowing down extends cutter life, which we model with <strong>Taylor's tool-life law</strong>, a long-established rule that tool life grows as cutting speed drops. Our data cannot measure this (every cutter ran at one speed), so the strength of the effect, the Taylor exponent n, is varied, and results are shown for several values.</p>
+<p>The workshop uses risk curves from the LightGBM survival model (it was built before the TCN was final), and splits the cutters into four groups, so each test group has only three or four cutters that the machines replay again and again.</p>
+<p>Slowing down extends cutter life, which we model with <strong>Taylor's tool-life law</strong>, a long-established rule that tool life grows as cutting speed drops. Our data cannot measure this (every cutter ran at one speed), so the strength of the effect, the Taylor exponent n, is varied, and results are shown for several values. One more caution: Taylor's law describes gradual wear, and our cutters ended by fracture, so the benefit of slowing down here is an assumption on top of an assumption.</p>
 <p><strong>Result: PPO and DQN did not beat well-tuned rules.</strong> On held-out cutters (profit per 1,000 cycles):</p>
 <div class="tablebox"><table>
 <thead>
@@ -553,14 +826,19 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 </thead>
 <tbody>
 <tr>
-<td>Rule that slows down when Taylor's law says it pays</td>
-<td style="text-align: right;">₹1.73 lakh</td>
-<td style="text-align: right;">₹0.98 lakh</td>
+<td>Rule: change when the risk curve says so, slow down when Taylor's law says it pays</td>
+<td style="text-align: right;"><strong>₹1.78 lakh</strong></td>
+<td style="text-align: right;">₹0.90 lakh</td>
 </tr>
 <tr>
-<td>Rule at normal speed</td>
+<td>Exact single-cutter rule, slowing down when Taylor's law says it pays</td>
+<td style="text-align: right;">₹1.73 lakh</td>
+<td style="text-align: right;"><strong>₹0.98 lakh</strong></td>
+</tr>
+<tr>
+<td>Exact single-cutter rule at normal speed</td>
 <td style="text-align: right;">₹0.98 lakh</td>
-<td style="text-align: right;">₹0.98 lakh</td>
+<td style="text-align: right;"><strong>₹0.98 lakh</strong></td>
 </tr>
 <tr>
 <td>PPO</td>
@@ -574,7 +852,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 </tr>
 </tbody>
 </table></div>
-<p>The agents learned to slow the machines down about 60% of the time, which roughly halved breakages compared with the normal-speed rule. But they kept slowing down even when it did not pay, and DQN also memorised its training cutters (₹1.54 lakh on them vs ₹0.87 lakh on new ones). We set the success test before running it, and RL failed it. For this problem, a clear rule is the better choice, and that is a useful finding.</p>
+<p>The agents learned to slow the machines down about 60% of the time, which roughly halved breakages compared with the normal-speed rule. But they kept slowing down even when it did not pay (at n = 0.4 the best rules never slow down), and DQN also memorised its training cutters (₹1.54 lakh on them vs ₹0.87 lakh on new ones). We set the success test before running it, and RL failed it. For this problem, a clear rule is the better choice, and that is a useful finding.</p>
 
 </section>
 <section id="what-we-can-and-cannot-claim">
@@ -582,22 +860,47 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 
 <p><strong>We can claim:</strong></p>
 <ul>
-<li>motor current and vibration carry real information about wear, on every machine we checked;</li>
-<li>a model trained on other factories' machines tracked wear on ours as well as our own data did;</li>
-<li>our predictions are level with a strong baseline overall and better near the end of life, tested honestly on unseen cutters;</li>
-<li>a rule driven by these predictions halved breakages in a replay of 13 real cutters.</li>
+<li>motor current and vibration carry real information about wear, on every machine we checked; on ours, the table current rose in all 13 cutters, and the rise is wear, not position in the block;</li>
+<li>the same network does clearly better with sensors than without: 6 cycles less error (interval 2.6 to 9.5), and a 16% cheaper decision rule (interval 2% to 29%, cheaper in all 24 cost settings);</li>
+<li>sensors matter most where the settings cannot help: the one cutter on an unseen holder (28 cycles off against 123) and the last part of life;</li>
+<li>a model trained only on other factories' machines tracked wear on ours nearly as well as our own data did (the difference is within the noise);</li>
+<li>every number comes from cutters the model never saw, and we found and fixed three leaks before reporting;</li>
+<li>the limit of this project is the number of cutter lives: the error was still falling steeply at 12 training cutters.</li>
 </ul>
 <p><strong>We cannot claim:</strong></p>
 <ul>
+<li>that the TCN beats LightGBM, or that any architecture beats another: 30 models were tested and the good ones are within the noise of 13 cutters;</li>
+<li>that sensors beat the settings for ordinary cutters over the whole life: on the 12 cutters with familiar settings, the settings-only survival model was more accurate overall (18 against 21 cycles), and its risk curves gave decisions as good as or better than the TCN's;</li>
+<li>that our risk curves are calibrated: the TCN's own 10%–90% range holds the truth only 13% of the time, and the widened range is too wide to act on;</li>
 <li>that the system saves a factory a particular percentage: the costs are assumed and 13 cutters cannot prove a few percent;</li>
+<li>that reinforcement learning beats simple rules here: it did not;</li>
 <li>that we predict physical wear: we predict cycles left before breakage;</li>
 <li>that slowing down extends life by any particular amount: that is modelled with Taylor's law, not measured;</li>
 <li>that the system is connected to a machine: it works on recorded data.</li>
 </ul>
 
 </section>
+<section id="questions-a-reviewer-might-ask">
+<h2><span class="n">11</span>Questions a reviewer might ask</h2>
+
+<p><strong>Why not shuffle all the rows and split them randomly, like most papers?</strong> Cycle 40 and cycle 41 of one cutter are near-copies, so a random split lets the model see the answer. We hide whole cutters (section 6).</p>
+<p><strong>Is the signal rise really wear, or just where the cutter is in the steel block?</strong> We removed the effect of ring position from both the signal and the life used; the table current still tracked life at 0.94 on average (section 4).</p>
+<p><strong>How do you know your testing does not leak?</strong> We looked for leaks and found three, all fixed (section 6). Every normalisation uses only cycles seen so far; every autoencoder score comes from a network that never heard the hidden cutter or the training cutter it is scoring; the decision rule's one number is set on predictions for the training cutters from models that never saw the hidden cutter.</p>
+<p><strong>Why a 4-million-number autoencoder, if PCA does as well?</strong> We did not know until we tested it, and we report it: PCA matched it, and a simple distance-from-healthy score on our physics features beat both. Adding the autoencoder's score to the TCN made it slightly worse. The autoencoder does show that wear can be heard without labels, but it is not needed for prediction.</p>
+<p><strong>Why a TCN, and not an LSTM or a transformer?</strong> We chose the TCN before comparing: it only looks backwards (like a real machine), trains stably on tiny data, and reads about the last 60 cycles. Then we tested LSTM, GRU and a transformer the same way: all within about a cycle of the TCN, inside the luck of the random start. With 12 training cutters, the architecture is not what limits us.</p>
+<p><strong>The TCN on the 120 released summaries scored best. Why not use it?</strong> Because we would be picking the winner on the test cutters. With 30 models tried, one will look best by luck; its edge (2.8 cycles) is within the noise. It is a strong hint for future work, and we report it as that.</p>
+<p><strong>Is your main model just the luckiest of 30?</strong> It cannot be, because it was fixed before the other 30 were run, and it is not the best of them: it sits in the middle of the good group. The single-start spread (21.7 to 24.1 cycles) shows how much luck alone moves a score.</p>
+<p><strong>If the settings-only model is better on 12 cutters, why use sensors at all?</strong> Settings tell you the expected life before the first cut, which is a lot. Sensors add what settings cannot know: how this particular cutter is actually doing, which matters near the end (13 vs 16 cycles off in the last 20%) and when something unusual happens (cutter 10: 28 vs 123). A workshop always meets new holders, materials and settings.</p>
+<p><strong>Why not combine the two?</strong> We tried a 50/50 average of the TCN and the settings-only model. It helps on the 12 ordinary cutters (17.7 whole life, 12.7 in the last 20%) but hurts cutter 10 (75 cycles off), so overall it is not better (22.1). Knowing when to trust the settings needs more cutters with unusual settings than we have.</p>
+<p><strong>Is 22 cycles of error good?</strong> It depends on the cutter: 4 to 9 cycles on short-lived cutters, 30 to 55 on the longest-lived ones, which have almost no similar cutter to learn from. That is why the decision uses the risk curve near the end of life, where the model is most accurate, not a single number.</p>
+<p><strong>Would more data help?</strong> Yes: the learning curve (section 7) is still falling steeply at 12 cutters.</p>
+<p><strong>Why did the end-to-end CNN on raw vibration lose?</strong> It has to learn its own features from 10 or 11 cutter lives. Our physics features already encode what to listen for (tooth rhythm, once-per-turn beat, load), which is knowledge the network would need many more cutters to discover.</p>
+<p><strong>Why use reinforcement learning if the exact best rule can be calculated?</strong> For one cutter it can, so we used that as a check of our RL setup. RL is only needed when decisions interact (one setter, three machines, slowing down). There, RL did not beat good rules, and we say so.</p>
+<p><strong>Did you need a GPU?</strong> No. The models are small; everything ran on a laptop and one 16-core cloud machine.</p>
+
+</section>
 <section id="where-everything-is">
-<h2><span class="n">11</span>Where everything is</h2>
+<h2><span class="n">12</span>Where everything is</h2>
 
 <div class="tablebox"><table>
 <thead>
@@ -641,7 +944,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 
 </section>
 <section id="word-list">
-<h2><span class="n">12</span>Word list</h2>
+<h2><span class="n">13</span>Word list</h2>
 
 <ul>
 <li><strong>CNC (Computer Numerical Control):</strong> a machine tool moved by a computer program.</li>
@@ -658,6 +961,14 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <li><strong>Data leakage:</strong> a model accidentally seeing information it would not have in real use, which makes scores look better than they are.</li>
 <li><strong>Hide one cutter (leave-one-group-out cross-validation):</strong> train on all cutters but one, test on that one, repeat for each.</li>
 <li><strong>LightGBM:</strong> a model made of many small decision trees, each fixing the previous ones' mistakes.</li>
+<li><strong>Survival model (Weibull):</strong> the standard statistics model for how long things last; here it uses only the settings and the age.</li>
+<li><strong>Paired bootstrap:</strong> resampling the 13 cutters thousands of times, judging two models on the same resample each time, to see whether the gap between them could be zero.</li>
+<li><strong>PCA (principal component analysis):</strong> squeezing many numbers into a few using only weighted sums; the straight-line version of an autoencoder.</li>
+<li><strong>Mahalanobis distance:</strong> how far a point is from a cloud of points, measured in units of the cloud's own spread in each direction.</li>
+<li><strong>Monotonicity, trendability, prognosability:</strong> whether a health score only goes up; whether all cutters follow a similar path; whether it ends at a similar level when they fail.</li>
+<li><strong>LSTM, GRU:</strong> recurrent networks that carry a running memory along a sequence.</li>
+<li><strong>Transformer:</strong> a network that can look directly at any earlier step of a sequence (attention).</li>
+<li><strong>Learning curve:</strong> a model's test error plotted against how much data it learned from.</li>
 <li><strong>Convolution / filter:</strong> sliding a small learned pattern detector along a signal / that detector.</li>
 <li><strong>CNN (convolutional neural network):</strong> a network built from convolutions.</li>
 <li><strong>Autoencoder:</strong> a network that squeezes its input into a few numbers and rebuilds it; here, trained on healthy cutting so that its rebuild error is a health score.</li>

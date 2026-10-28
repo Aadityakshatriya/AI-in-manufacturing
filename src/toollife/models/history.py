@@ -1,9 +1,10 @@
 """History model: a TCN that reads one cutter's cycles in order and draws a failure curve after each one.
 
 Per cycle the input is a vector of numbers (physics features, settings, age, and optionally the
-autoencoder's fingerprint and health score). The TCN (temporal convolutional network) is four layers
+autoencoder's health score). The TCN (temporal convolutional network) is four layers
 of 1-D convolutions along the sequence of cycles. Each is causal (looks only at this cycle and earlier
-ones, never later) and dilated (layer gaps 1, 2, 4, 8), so the last layer sees about 31 cycles back.
+ones, never later) and dilated (gaps 1, 2, 4, 8). Each of the 4 blocks has two such convolutions, so the
+last block sees about 60 cycles back (1 + 2 × 2 × (1 + 2 + 4 + 8) = 61).
 Two heads: the hazard curve over the next K cycles (6 spline coefficients) and a 0→1 "life used" gauge.
 
 Training is tool-balanced: each cutter's cycles are averaged first, then cutters are averaged, so a
@@ -37,7 +38,12 @@ def make_sequences(df, feature_cols: list[str], tool_col="tool", order_col="age"
     df = df[df[rul_col] >= 1].sort_values([tool_col, order_col])
     x_all = df[feature_cols].to_numpy(np.float32)
     if mean is None:
-        mean, std = np.nanmean(x_all, 0), np.nanstd(x_all, 0) + 1e-6
+        mean, std = np.nanmean(x_all, 0), np.nanstd(x_all, 0)
+        # A feature that never varies in training carries nothing the model could learn, so it is
+        # scaled to zero instead of divided by ~0. (Cutter 10 is the only one on the 160 mm holder:
+        # when it is hidden, holder length is constant in training, and dividing by ~0 used to turn
+        # its value into ~80 million and make cutter 10's score arbitrary. Fixed 28 Oct.)
+        std = np.where(std > 1e-6, std, np.inf)
     tools = list(df[tool_col].unique())
     T = df.groupby(tool_col).size().max()
     n, f = len(tools), len(feature_cols)

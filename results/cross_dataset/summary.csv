@@ -1,9 +1,9 @@
 setting,dataset,cutters,mae,rho
-hide dataset: luh,luh,9,0.234,0.91
-hide dataset: mstw,mstw,25,0.166,0.733
-hide dataset: nasa,nasa,15,0.387,0.792
-hide dataset: rzeszow,rzeszow,13,0.146,0.892
-hide dataset: vmc650,vmc650,24,0.259,0.718
-ours: trained on other machines only,rzeszow,13,0.146,0.892
-ours: trained on ours + other machines,rzeszow,13,0.135,0.922
-ours: trained on ours only,rzeszow,13,0.14,0.858
+hide dataset: luh,luh,9,0.199,0.637
+hide dataset: mstw,mstw,25,0.199,0.907
+hide dataset: nasa,nasa,15,0.435,0.71
+hide dataset: rzeszow,rzeszow,13,0.182,0.756
+hide dataset: vmc650,vmc650,24,0.397,0.633
+ours: trained on other machines only,rzeszow,13,0.182,0.756
+ours: trained on ours + other machines,rzeszow,13,0.153,0.9
+ours: trained on ours only,rzeszow,13,0.172,0.883

@@ -1,0 +1,6 @@
+indicator,label,monotonicity,monotonicity_raw,trendability,trendability_mean,prognosability,spearman,spearman_median,cutters_spearman_over_05,cutters,autoencoder_version
+pca_time,PCA on raw signal,0.569,0.377,0.615,0.892,0.693,0.86,0.966,12,13,"g1 28 Oct 02:53, g2 28 Oct 03:01, g3 28 Oct 03:08, g4 28 Oct 03:18, g5 28 Oct 03:29"
+pca_spectrum,PCA on spectrum,0.406,0.261,0.009,0.682,0.698,0.802,0.868,12,13,"g1 28 Oct 02:53, g2 28 Oct 03:01, g3 28 Oct 03:08, g4 28 Oct 03:18, g5 28 Oct 03:29"
+mahalanobis,"Mahalanobis, physics features",0.584,0.263,0.744,0.912,0.812,0.907,0.946,13,13,"g1 28 Oct 02:53, g2 28 Oct 03:01, g3 28 Oct 03:08, g4 28 Oct 03:18, g5 28 Oct 03:29"
+cnn_autoencoder,CNN autoencoder (4M),0.48,0.241,0.469,0.876,0.704,0.877,0.938,12,13,"g1 28 Oct 02:53, g2 28 Oct 03:01, g3 28 Oct 03:08, g4 28 Oct 03:18, g5 28 Oct 03:29"
+table_current,Table motor current,0.505,0.452,0.511,0.91,0.678,0.83,0.866,13,13,"g1 28 Oct 02:53, g2 28 Oct 03:01, g3 28 Oct 03:08, g4 28 Oct 03:18, g5 28 Oct 03:29"

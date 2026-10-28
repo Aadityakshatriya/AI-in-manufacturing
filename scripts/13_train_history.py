@@ -20,6 +20,7 @@ import pandas as pd
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from toollife.datasets.common import causal_baseline
 from toollife.models.hazard import curves, fit_blur, tool_conformal_margin
 from toollife.models.history import make_sequences, predict, train
 from toollife.rzeszow import ROOT
@@ -38,12 +39,12 @@ PHYS_REL = [
 PHYS_ABS = ["X_Driving_axle_pZ__asym", "X_Driving_axle_pZ__sync_frac", "X_Driving_axle_pZ__kurt", "Spindle_mX__kurt"]
 
 
-GROUP_OF = {t: g for g, ts in {1: [2, 7, 101], 2: [3, 8, 102], 3: [4, 9, 103], 4: [5, 10], 5: [6, 105]}.items() for t in ts}
+GROUPS = {1: [2, 7, 101], 2: [3, 8, 102], 3: [4, 9, 103], 4: [5, 10], 5: [6, 105]}
 
 
 def load(features: str) -> tuple[pd.DataFrame, list[str]]:
     df = pd.read_parquet(ROOT / "data" / "processed" / "rzeszow_physics.parquet")
-    df = df[df["tool"] != 11].copy()
+    df = df[df["tool"] != 11].sort_values(["tool", "age", "file"]).drop_duplicates(["tool", "age"]).copy()
     df["log_age"] = np.log1p(df["age"])
     df["first_ring"] = df["file"].str.endswith("_C1").astype(float)
     cols = SETTINGS + ["log_age"]
@@ -52,20 +53,42 @@ def load(features: str) -> tuple[pd.DataFrame, list[str]]:
             df[f"lr_{c}"] = np.log(df[f"{c}__rel"].clip(1e-3, 1e3))
         cols += [f"lr_{c}" for c in PHYS_REL] + PHYS_ABS + ["first_ring"]
     if features in ("ae", "physics_ae"):
-        cols += ["log_health", "log_health_rel"] + [f"emb_{i}" for i in range(64)]
+        # Health scores depend on which cutter is hidden, so they are added inside each fold (run_fold).
+        cols += ["log_health", "log_health_rel"]
     df["life_frac"] = (df["age"] + 1) / df["life"]
     return df, cols
 
 
-def add_autoencoder(df: pd.DataFrame, group: int) -> pd.DataFrame:
-    """Fingerprint and health score from autoencoder `group` (which never heard that group's cutters)."""
-    ae = pd.read_parquet(ROOT / "data" / "processed" / f"ae_g{group}.parquet")
-    ae = ae.rename(columns={f"fp_{i}": f"emb_{i}" for i in range(64)})
-    out = df.merge(ae, on="file", how="left").sort_values(["tool", "age"])
+GROUP_OF = {t: g for g, tools in GROUPS.items() for t in tools}
+
+
+def add_autoencoder(df: pd.DataFrame, held) -> pd.DataFrame:
+    """The autoencoder health score of every cycle, for the fold that hides cutter `held`.
+
+    Every cutter's score comes from an autoencoder that heard neither that cutter nor the hidden
+    one: for cutters of the hidden cutter's own group, the autoencoder trained without that group;
+    for a cutter of another group, the one trained without both groups (scripts/11 --pairs).
+    So no feature the TCN sees in this fold, for training or for testing, was shaped by the hidden
+    cutter's vibration. (Until 28 Oct the training cutters' scores came from autoencoders that had
+    heard the hidden cutter's early cycles; spotted in review.) The 64-number fingerprints are not
+    used: fingerprints from different autoencoders live in different spaces.
+    The inner calibration loop of run_fold reuses these scores, so there the inner hidden cutter
+    may have been heard; that only affects the width of the conformal margins.
+    """
+    gh = GROUP_OF[held]
+    parts = []
+    for g, tools in GROUPS.items():
+        name = f"g{g}" if g == gh else f"g{min(g, gh)}{max(g, gh)}"
+        ae = pd.read_parquet(ROOT / "data" / "processed" / f"ae_{name}.parquet")[["file", "health"]]
+        parts.append(df[df["tool"].isin(tools)].merge(ae, on="file", how="left"))
+    out = pd.concat(parts).sort_values(["tool", "age"]).reset_index(drop=True)
     out["log_health"] = np.log(out["health"])
-    # Health relative to the cutter's own first clean cycles: "how much less healthy than when new".
-    base = out[~out["file"].str.endswith("_C1")].groupby("tool")["log_health"].apply(lambda s: s.head(3).median())
-    out["log_health_rel"] = out["log_health"] - out["tool"].map(base)
+    # Health relative to the cutter's own first clean cycles seen so far: "how much less healthy than
+    # when new". Causal: never uses later cycles.
+    out["log_health_rel"] = np.nan
+    for _, g in out.groupby("tool"):
+        base = causal_baseline(g["log_health"].to_numpy(), ~g["file"].str.endswith("_C1").to_numpy())
+        out.loc[g.index, "log_health_rel"] = g["log_health"].to_numpy() - base
     return out
 
 
@@ -104,7 +127,7 @@ def fit_predict(train_df, test_df, cols, seeds):
 def run_fold(held, features, base_df, cols, seeds, use_blur=False):
     """One outer fold: calibrate on the other 12 cutters, then predict the hidden one."""
     torch.set_num_threads(1)
-    df = add_autoencoder(base_df, GROUP_OF[held]) if features in ("ae", "physics_ae") else base_df
+    df = add_autoencoder(base_df, held) if "log_health" in cols else base_df
     dev, test = df[df["tool"] != held], df[df["tool"] == held]
     # Inner loop: out-of-fold predictions on the 12 development cutters, for calibration only.
     oof = [fit_predict(dev[dev["tool"] != inner], dev[dev["tool"] == inner], cols, 1)[:2] for inner in sorted(dev["tool"].unique())]
@@ -180,6 +203,8 @@ def main() -> None:
             cover_raw=((g["rul"] >= g["rul_q10"]) & (g["rul"] <= g["rul_q90"])).mean(),
             cover_widened=((g["rul"] >= g["rul_lower"]) & (g["rul"] <= g["rul_upper"])).mean(),
             width=(g["rul_upper"] - g["rul_lower"]).mean(),
+            width_last20=(g["rul_upper"] - g["rul_lower"])[near].mean(),
+            whole_life_inside=float(((g["rul"] >= g["rul_lower"]) & (g["rul"] <= g["rul_upper"])).all()),
             brier5=((g["p_fail_5"] - (g["rul"] <= 5)) ** 2).mean(),
         ))
     m = pd.DataFrame(m)
