@@ -1,0 +1,16 @@
+{
+  "voice": {"model": "bulbul:v3", "speaker": "tanya", "language": "en-IN"},
+  "scenes": [
+    ["s01_cold_open", "Two hundred and thirteen times every second, a sliver of carbide slams into hardened steel. Each hit steals a little of its edge. And one day, without any warning... it snaps."],
+    ["s02_title", "This is ToolLife Policy. The story of teaching a machine to feel that moment coming. From steel, to signals, to ones and zeros, and back to one simple decision: keep cutting, or change the tool."],
+    ["s03_wear", "Zoom in on a single tooth. A fresh edge slices cleanly. But every hit rubs the face beneath it a little flatter, until the edge stops slicing, and starts pushing. Pushing means more force. More force means more heat. More heat means faster wear. It is a runaway loop, and it ends in fracture."],
+    ["s04_settings", "How long a cutter survives depends on how hard we push it. A wider bite puts more teeth into the steel at once. A longer holder turns the cutter into a diving board: twice as long, up to eight times floppier, until it starts to shake on its own. Our cutters lived anywhere from fifteen to a hundred and fifty cycles."],
+    ["s05_signals", "We cannot see the edge. But the machine can feel it. The motor that drives the table works harder as the edge goes blunt: near the end, up to two point seven times its starting current. And the vibration sensors, listening twenty-five thousand times a second, hear a new beat. Once per turn. The sound of a chipped tooth."],
+    ["s06_bits", "To a computer, that sound is only numbers. Sample the wave, and every instant becomes a number. Every number becomes bits. One cut becomes five sensors, times four thousand and ninety-six readings. One cutter's life becomes millions of them."],
+    ["s07_autoencoder", "Our first network is an autoencoder. It squeezes twenty thousand numbers through a bottleneck of just sixty-four, then tries to rebuild the original. We trained it only on healthy cutting. So when a worn tool sounds different, the rebuild fails. And the size of that failure becomes a health score."],
+    ["s08_tcn", "Our second network reads the cutter's history like a sentence. A temporal convolutional network. Each layer looks twice as far into the past: one, two, four, eight cycles back. Never into the future. After every cycle, it draws a risk curve: the chance of breaking on each cycle still to come."],
+    ["s09_honesty", "Then we tried to fool ourselves, and caught it. We hid one whole cutter at a time, so the model was always judged on a tool it had never seen. We raced our network against thirty others: trees, recurrent nets, transformers, convolutions on raw sound. The good ones finished within the noise of each other. With thirteen cutters, the limit is not the model. It is the data."],
+    ["s10_decision", "And then, the decision. After every cycle, weigh the chance of breaking, times the cost of a breakage, against the cost of changing the tool right now. When the risk outweighs the cost, change it. Replayed on thirteen real cutters, that rule let five break, instead of ten."],
+    ["s11_close", "Steel, to signals, to numbers, to a choice. The tool will always break. The only question is whether you see it coming. ToolLife Policy."]
+  ]
+}

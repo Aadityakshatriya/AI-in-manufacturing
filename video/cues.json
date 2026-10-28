@@ -1,0 +1,352 @@
+{
+ "s01_cold_open": {
+  "duration": 13.19,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 6.81,
+    "text": "Two hundred and thirteen times every second, a sliver of carbide slams into hardened steel."
+   },
+   {
+    "t": 7.01,
+    "end": 9.61,
+    "text": "Each hit steals a little of its edge."
+   },
+   {
+    "t": 9.85,
+    "end": 12.05,
+    "text": "And one day, without any warning"
+   },
+   {
+    "t": 12.22,
+    "end": 12.58,
+    "text": "it snaps."
+   }
+  ]
+ },
+ "s02_title": {
+  "duration": 14.45,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 1.8,
+    "text": "This is ToolLife Policy."
+   },
+   {
+    "t": 2.0,
+    "end": 5.48,
+    "text": "The story of teaching a machine to feel that moment coming."
+   },
+   {
+    "t": 5.66,
+    "end": 11.76,
+    "text": "From steel, to signals, to ones and zeros, and back to one simple decision:"
+   },
+   {
+    "t": 12.02,
+    "end": 13.84,
+    "text": "keep cutting, or change the tool."
+   }
+  ]
+ },
+ "s03_wear": {
+  "duration": 21.72,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 2.05,
+    "text": "Zoom in on a single tooth."
+   },
+   {
+    "t": 2.23,
+    "end": 4.43,
+    "text": "A fresh edge slices cleanly."
+   },
+   {
+    "t": 4.66,
+    "end": 12.14,
+    "text": "But every hit rubs the face beneath it a little flatter, until the edge stops slicing, and starts pushing."
+   },
+   {
+    "t": 12.35,
+    "end": 14.06,
+    "text": "Pushing means more force."
+   },
+   {
+    "t": 14.3,
+    "end": 16.0,
+    "text": "More force means more heat."
+   },
+   {
+    "t": 16.59,
+    "end": 18.36,
+    "text": "More heat means faster wear."
+   },
+   {
+    "t": 18.55,
+    "end": 21.22,
+    "text": "It is a runaway loop, and it ends in fracture."
+   }
+  ]
+ },
+ "s04_settings": {
+  "duration": 21.29,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 4.2,
+    "text": "How long a cutter survives depends on how hard we push it."
+   },
+   {
+    "t": 4.35,
+    "end": 7.63,
+    "text": "A wider bite puts more teeth into the steel at once."
+   },
+   {
+    "t": 7.9,
+    "end": 11.09,
+    "text": "A longer holder turns the cutter into a diving board:"
+   },
+   {
+    "t": 11.27,
+    "end": 16.58,
+    "text": "twice as long, up to eight times floppier, until it starts to shake on its own."
+   },
+   {
+    "t": 17.2,
+    "end": 20.66,
+    "text": "Our cutters lived anywhere from fifteen to a hundred and fifty cycles."
+   }
+  ]
+ },
+ "s05_signals": {
+  "duration": 22.55,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 1.3,
+    "text": "We cannot see the edge."
+   },
+   {
+    "t": 1.62,
+    "end": 3.21,
+    "text": "But the machine can feel it."
+   },
+   {
+    "t": 3.9,
+    "end": 8.58,
+    "text": "The motor that drives the table works harder as the edge goes blunt:"
+   },
+   {
+    "t": 8.81,
+    "end": 13.14,
+    "text": "near the end, up to two point seven times its starting current."
+   },
+   {
+    "t": 13.57,
+    "end": 19.37,
+    "text": "And the vibration sensors, listening twenty-five thousand times a second, hear a new beat."
+   },
+   {
+    "t": 19.56,
+    "end": 20.61,
+    "text": "Once per turn."
+   },
+   {
+    "t": 20.8,
+    "end": 22.18,
+    "text": "The sound of a chipped tooth."
+   }
+  ]
+ },
+ "s06_bits": {
+  "duration": 16.96,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 2.99,
+    "text": "To a computer, that sound is only numbers."
+   },
+   {
+    "t": 3.22,
+    "end": 6.39,
+    "text": "Sample the wave, and every instant becomes a number."
+   },
+   {
+    "t": 6.78,
+    "end": 8.47,
+    "text": "Every number becomes bits."
+   },
+   {
+    "t": 8.79,
+    "end": 13.88,
+    "text": "One cut becomes five sensors, times four thousand and ninety-six readings."
+   },
+   {
+    "t": 14.14,
+    "end": 16.6,
+    "text": "One cutter's life becomes millions of them."
+   }
+  ]
+ },
+ "s07_autoencoder": {
+  "duration": 20.64,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 2.6,
+    "text": "Our first network is an autoencoder."
+   },
+   {
+    "t": 2.8,
+    "end": 10.29,
+    "text": "It squeezes twenty thousand numbers through a bottleneck of just sixty-four, then tries to rebuild the original."
+   },
+   {
+    "t": 10.67,
+    "end": 13.06,
+    "text": "We trained it only on healthy cutting."
+   },
+   {
+    "t": 13.46,
+    "end": 17.21,
+    "text": "So when a worn tool sounds different, the rebuild fails."
+   },
+   {
+    "t": 17.63,
+    "end": 20.34,
+    "text": "And the size of that failure becomes a health score."
+   }
+  ]
+ },
+ "s08_tcn": {
+  "duration": 20.46,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 3.88,
+    "text": "Our second network reads the cutter's history like a sentence."
+   },
+   {
+    "t": 4.18,
+    "end": 6.3,
+    "text": "A temporal convolutional network."
+   },
+   {
+    "t": 6.54,
+    "end": 9.33,
+    "text": "Each layer looks twice as far into the past:"
+   },
+   {
+    "t": 9.63,
+    "end": 12.29,
+    "text": "one, two, four, eight cycles back."
+   },
+   {
+    "t": 12.52,
+    "end": 13.74,
+    "text": "Never into the future."
+   },
+   {
+    "t": 13.94,
+    "end": 17.0,
+    "text": "After every cycle, it draws a risk curve:"
+   },
+   {
+    "t": 17.19,
+    "end": 20.16,
+    "text": "the chance of breaking on each cycle still to come."
+   }
+  ]
+ },
+ "s09_honesty": {
+  "duration": 25.51,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 2.61,
+    "text": "Then we tried to fool ourselves, and caught it."
+   },
+   {
+    "t": 2.87,
+    "end": 9.04,
+    "text": "We hid one whole cutter at a time, so the model was always judged on a tool it had never seen."
+   },
+   {
+    "t": 9.26,
+    "end": 11.82,
+    "text": "We raced our network against thirty others:"
+   },
+   {
+    "t": 12.07,
+    "end": 16.8,
+    "text": "trees, recurrent nets, transformers, convolutions on raw sound."
+   },
+   {
+    "t": 17.1,
+    "end": 19.92,
+    "text": "The good ones finished within the noise of each other."
+   },
+   {
+    "t": 20.24,
+    "end": 23.98,
+    "text": "With thirteen cutters, the limit is not the model."
+   },
+   {
+    "t": 24.26,
+    "end": 24.98,
+    "text": "It is the data."
+   }
+  ]
+ },
+ "s10_decision": {
+  "duration": 19.21,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 1.69,
+    "text": "And then, the decision."
+   },
+   {
+    "t": 1.86,
+    "end": 10.19,
+    "text": "After every cycle, weigh the chance of breaking, times the cost of a breakage, against the cost of changing the tool right now."
+   },
+   {
+    "t": 10.43,
+    "end": 13.32,
+    "text": "When the risk outweighs the cost, change it."
+   },
+   {
+    "t": 13.59,
+    "end": 18.9,
+    "text": "Replayed on thirteen real cutters, that rule let five break, instead of ten."
+   }
+  ]
+ },
+ "s11_close": {
+  "duration": 10.86,
+  "phrases": [
+   {
+    "t": 0.0,
+    "end": 3.79,
+    "text": "Steel, to signals, to numbers, to a choice."
+   },
+   {
+    "t": 4.13,
+    "end": 5.88,
+    "text": "The tool will always break."
+   },
+   {
+    "t": 6.17,
+    "end": 9.13,
+    "text": "The only question is whether you see it coming."
+   },
+   {
+    "t": 9.42,
+    "end": 10.34,
+    "text": "ToolLife Policy."
+   }
+  ]
+ }
+}
