@@ -364,6 +364,10 @@ At typical Indian costs (breakage about twice a planned change):
 - **Changing every N cycles** let **10 of 13** cutters break. **Our rule on the TCN's risk curves** let **5** break and was **6% cheaper** (₹93 against ₹99 per good cycle). With only 13 cutters that saving is not yet certain: the 95% interval runs from 10% dearer to 21% cheaper.
 - **Same network, with and without sensors:** the TCN that knows only settings and age makes the rule cost ₹111. With the sensor features it costs ₹93: **16% cheaper** (95% interval 2% to 29%), and cheaper in **all 24** cost settings. This is the clearest money value of the sensors that we can show.
 - **But a simple survival model on settings and age is about as good** (₹97, 7 breakages), and across the 24 cost settings it is cheaper than the TCN in 20, by more when breakage is very expensive. The reason is that the decision needs **honest probabilities**, not just a good middle estimate. The survival model is a statistics model built to give calibrated chances of failure; the TCN's risk curves are too confident (section 7: its own range holds the truth only 13% of the time). When a breakage costs 10 or 30 times a planned change, a too-confident curve leads to the wrong call more often.
+- **We tried calibrating the TCN's risk curves, and it made the decisions worse.** We rescaled each curve's log-odds by one number (a "temperature") or by two (a scale and a shift), fitted for each hidden cutter on the other 12 cutters only, by the same likelihood the TCN was trained with (`scripts/25_calibrate_hazard.py`). The two-number version made the curves far more honest: the chance-of-breaking-within-5-cycles error halved (Brier score 0.178 to 0.085), and the 10%–90% range held the truth 68% of the time instead of 13%. But it did so by nearly flattening every curve into "about 2–4% chance of breaking each cycle", which keeps the honesty and throws away the timing. Its rule beat every N cycles in only 11 of the 24 cost settings (19 before calibration). The one-number version was worse still: when a breakage costs 10 times a change, it changed every cutter after one cycle. At typical Indian costs all three versions are within the noise (₹89 to ₹93). So simple calibration does not close the gap to the survival model; a predictor that is both sharp and honest would need more cutters or a different training target.
+
+![Predicted vs observed chance of breaking within 5 cycles](docs/img/results/calibration.png)
+
 - **Perfect knowledge** of the breaking point would cost ₹59, **40% less** than every N cycles. That gap is the value of better, and better-calibrated, prediction.
 
 Across all 24 cost settings, our rule on the TCN's curves was cheaper than every N cycles in 19.
@@ -425,7 +429,7 @@ The agents learned to slow the machines down about 60% of the time, which roughl
 
 - that the TCN beats LightGBM, or that any architecture beats another: 30 models were tested and the good ones are within the noise of 13 cutters;
 - that sensors beat the settings for ordinary cutters over the whole life: on the 12 cutters with familiar settings, the settings-only survival model was more accurate overall (18 against 21 cycles), and its risk curves gave decisions as good as or better than the TCN's;
-- that our risk curves are calibrated: the TCN's own 10%–90% range holds the truth only 13% of the time, and the widened range is too wide to act on;
+- that our risk curves are calibrated: the TCN's own 10%–90% range holds the truth only 13% of the time, the widened range is too wide to act on, and calibrating the curves made them honest but too flat to time decisions;
 - that the system saves a factory a particular percentage: the costs are assumed and 13 cutters cannot prove a few percent;
 - that reinforcement learning beats simple rules here: it did not;
 - that we predict physical wear: we predict cycles left before breakage;
@@ -459,6 +463,8 @@ The agents learned to slow the machines down about 60% of the time, which roughl
 **Would more data help?** Yes: the learning curve (section 7) is still falling steeply at 12 cutters.
 
 **Why did the end-to-end CNN on raw vibration lose?** It has to learn its own features from 10 or 11 cutter lives. Our physics features already encode what to listen for (tooth rhythm, once-per-turn beat, load), which is knowledge the network would need many more cutters to discover.
+
+**Your risk curves are overconfident. Why not calibrate them?** We did (section 8). Rescaling the curves by one or two numbers fitted on the other cutters made them honest but flat, and flat curves cannot tell the rule *when* to change, so the decisions got worse in most cost settings. We report it as a negative result rather than tune more ways until one wins.
 
 **Why use reinforcement learning if the exact best rule can be calculated?** For one cutter it can, so we used that as a check of our RL setup. RL is only needed when decisions interact (one setter, three machines, slowing down). There, RL did not beat good rules, and we say so.
 

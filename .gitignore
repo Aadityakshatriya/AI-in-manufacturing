@@ -14,3 +14,8 @@ data/
 results/predictions/nested/
 results/autoencoders/*.pt
 results/*.log
+
+# Film: renders, venv and the assembled output are regenerable
+video/.venv/
+video/media/
+video/out/

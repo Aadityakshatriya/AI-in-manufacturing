@@ -8,6 +8,7 @@
   cross_dataset.png    our cutters' life-fraction error by what the model was trained on
   decisions.png        cost per good cycle at typical Indian costs, and breakages
   learning_curve.png   the TCN's error when it learns from 4, 6, 9 or all 12 training cutters
+  calibration.png      predicted vs observed chance of breaking within 5 cycles, before and after calibration
 Writes to results/figures/ and docs/img/results/.
 """
 
@@ -270,4 +271,23 @@ ax.set_xlabel("cutters the TCN learned from (band: spread over 3 random picks)")
 ax.set_ylabel("error in cycles left (lower is better)")
 ax.set_title("Still falling at 12 cutters: more cutter lives would help", loc="left", fontsize=12)
 save(fig, "learning_curve.png")
+
+# 6. Calibration of the risk curves (results/models/calibration_reliability.csv, scripts/25_calibrate_hazard.py).
+rel_path = ROOT / "results" / "models" / "calibration_reliability.csv"
+if rel_path.exists():
+    rel = pd.read_csv(rel_path)
+    fig, ax = plt.subplots(figsize=(7.2, 5.6))
+    ax.plot([0, 1], [0, 1], color=MUTED, lw=1, ls=":")
+    ax.text(0.98, 0.93, "perfectly honest", rotation=38, color=INK2, fontsize=9, ha="right", va="top")
+    for method, color, label in (("none", ORANGE, "as trained"), ("affine", BLUE, "calibrated (affine)")):
+        r = rel[rel.method == method]
+        ax.scatter(r.predicted, r.observed, s=25 + r.rows * 0.6, color=color, alpha=0.85, edgecolor=SURFACE, lw=1.5, zorder=3, label=label)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_xlabel("predicted chance of breaking within 5 cycles")
+    ax.set_ylabel("how often it broke within 5 cycles")
+    ax.text(0.99, 0.02, "dot size: number of cycles in the bin", transform=ax.transAxes, ha="right", fontsize=9, color=INK2)
+    ax.set_title("The TCN's risk curves are overconfident; calibration pulls them in", loc="left", fontsize=11.5)
+    ax.legend(frameon=False, loc="upper left", fontsize=10, markerscale=0.5)
+    save(fig, "calibration.png")
 print("figures written")
