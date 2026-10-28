@@ -260,7 +260,7 @@ What this means:
 
 ### Every other model we tried
 
-To answer "did you just pick a model you liked?", we ran **30 other models** through exactly the same test: the same 13 hidden cutters, the same cycles, the same scoring. The TCN on physics features was fixed as our main model **before** this comparison, and we did not switch to whichever came out best, because picking the best of 30 on the test cutters would itself be a kind of leak: with this many tries, one will look better by luck.
+To answer "did you just pick a model you liked?", we ran **30 other models** (and later two more, for the pretraining test in the transfer section) through exactly the same test: the same 13 hidden cutters, the same cycles, the same scoring. The TCN on physics features was fixed as our main model **before** this comparison, and we did not switch to whichever came out best, because picking the best of 30 on the test cutters would itself be a kind of leak: with this many tries, one will look better by luck.
 
 ![Every model we tried](docs/img/results/zoo.png)
 
@@ -282,6 +282,7 @@ To answer "did you just pick a model you liked?", we ran **30 other models** thr
 | Which inputs | TCN on vibration only / motor currents only | 22.5 / 27.6 | 16.8 / 20.8 | Shaking (vibration) vs force (current) carries the wear signal |
 | | TCN without the age input | 24.2 | 18.3 | The signals alone know how worn the cutter is |
 | | TCN on the 120 released summaries | **19.2** | **10.8** | More, rawer statistics of every sensor, instead of our 29 physics features |
+| Transfer | TCN pretrained on 73 lives from the four other datasets, then trained on ours (control: same inputs, no pretraining) | 22.0 (22.2) | 14.5 (16.3) | How load and vibration change towards the end of a life carries over between machines (section 7, transfer) |
 | Raw signal | 1-D CNN trained end to end on raw vibration | 31.7 | 22.2 | The network finds its own features in the raw sound (tested with 5 groups of cutters, not one at a time) |
 
 What the zoo tells us:
@@ -329,6 +330,14 @@ Hiding each whole dataset in turn, the estimate still rose with wear on every un
 The raw signals agree: on every machine at least one of the two rose with wear. Spindle load rose clearly on NASA and Hannover (rank correlation with life 0.97 each), less on the VMC shop (0.57) and ours (0.72), and hardly on MSTW (0.14), where vibration carried the wear instead (0.96). On NASA, vibration even fell slightly (−0.25).
 
 ![Life-fraction error on our cutters by training data](docs/img/results/cross_dataset.png)
+
+**Pretraining our main model on the other machines.** We then used those 73 other lives to give the main TCN a head start (`scripts/26_pretrain_transfer.py`). First it learned to estimate the fraction of life used from the other four datasets' spindle load and vibration alone, without ever seeing one of our cutters. Then it was trained on our 12 training cutters with its normal inputs plus those two shared signals, and tested on the hidden one, as always. To check that any gain comes from the pretraining and not from the two added signals, we also trained the same model from scratch.
+
+- Before any training on our data, the pretrained network already tracked life used on our cutters with an error of 0.17 (always guessing 0.5 scores 0.25).
+- After training on ours, its error over the whole life was unchanged: 22.0 cycles, against 21.9 for the main TCN and 22.2 from scratch.
+- In the last 20% of life it was better: 14.5 cycles, against 15.9 and 16.3, and better than the main TCN on 9 of 13 cutters. But the 95% interval of that 1.4-cycle gain runs from −1.2 to 4.1 cycles, so with 13 cutters it is a hint, not a result.
+
+Two cautions: in the other datasets a life ends at a wear limit or the operator's call, not at breakage, and one "run" is a different amount of cutting in each dataset. So the head start teaches the general shape of a cutter's last stretch, not our cutters' exact timing.
 
 ---
 
@@ -461,6 +470,8 @@ The agents learned to slow the machines down about 60% of the time, which roughl
 **Is 22 cycles of error good?** It depends on the cutter: 4 to 9 cycles on short-lived cutters, 30 to 55 on the longest-lived ones, which have almost no similar cutter to learn from. That is why the decision uses the risk curve near the end of life, where the model is most accurate, not a single number.
 
 **Would more data help?** Yes: the learning curve (section 7) is still falling steeply at 12 cutters.
+
+**Why not use the other datasets to train the main model?** Their lives end differently (wear limit or operator's call, not breakage), and their sensors and cut sizes differ, so they cannot simply be added. We did use them as a head start: pretraining the TCN on their 73 lives, then training it on ours, left the whole-life error unchanged (22.0) and cut the last-20% error from 15.9 to 14.5 cycles, better on 9 of 13 cutters, but within the noise of 13 cutters (section 7). It is the most promising lead we have, and confirming it needs more of our own cutters.
 
 **Why did the end-to-end CNN on raw vibration lose?** It has to learn its own features from 10 or 11 cutter lives. Our physics features already encode what to listen for (tooth rhythm, once-per-turn beat, load), which is knowledge the network would need many more cutters to discover.
 

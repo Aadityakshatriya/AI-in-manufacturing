@@ -140,6 +140,11 @@ figure img { display: block; width: 100%; height: auto; border-radius: 6px; bord
 figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
 code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 4px; border-radius: 3px; }
 hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
+figure { margin: 8px 0 22px; }
+figure img { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--rule); background: #fff; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
+code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 4px; border-radius: 3px; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 </style>
 </head>
 <body>
@@ -541,7 +546,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <li><strong>The ranges.</strong> The model's own low-to-high range (10% to 90%) is too confident: it contains the true value only 13% of the time. We widen it by the worst miss seen on the other cutters, a conformal-style correction; the widened range then contains the truth 97% of the time, and stays fully inside for the whole life of 12 of 13 cutters, but it is about 115 cycles wide. That is honest but too wide to act on, which is why the decisions use the risk curve itself, not this range. (A formal conformal guarantee does not quite apply, because the margins come from simpler models trained inside each test.) We also tried two ways of making the risk curves less confident; both made the middle estimate worse, so we did not use them.</li>
 </ul>
 <h3>Every other model we tried</h3>
-<p>To answer "did you just pick a model you liked?", we ran <strong>30 other models</strong> through exactly the same test: the same 13 hidden cutters, the same cycles, the same scoring. The TCN on physics features was fixed as our main model <strong>before</strong> this comparison, and we did not switch to whichever came out best, because picking the best of 30 on the test cutters would itself be a kind of leak: with this many tries, one will look better by luck.</p>
+<p>To answer "did you just pick a model you liked?", we ran <strong>30 other models</strong> (and later two more, for the pretraining test in the transfer section) through exactly the same test: the same 13 hidden cutters, the same cycles, the same scoring. The TCN on physics features was fixed as our main model <strong>before</strong> this comparison, and we did not switch to whichever came out best, because picking the best of 30 on the test cutters would itself be a kind of leak: with this many tries, one will look better by luck.</p>
 <figure><img src="img/results/zoo.png" alt="Every model we tried" loading="lazy"><figcaption>Every model we tried</figcaption></figure>
 <div class="tablebox"><table>
 <thead>
@@ -667,6 +672,13 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <td>More, rawer statistics of every sensor, instead of our 29 physics features</td>
 </tr>
 <tr>
+<td>Transfer</td>
+<td>TCN pretrained on 73 lives from the four other datasets, then trained on ours (control: same inputs, no pretraining)</td>
+<td style="text-align: right;">22.0 (22.2)</td>
+<td style="text-align: right;">14.5 (16.3)</td>
+<td>How load and vibration change towards the end of a life carries over between machines (section 7, transfer)</td>
+</tr>
+<tr>
 <td>Raw signal</td>
 <td>1-D CNN trained end to end on raw vibration</td>
 <td style="text-align: right;">31.7</td>
@@ -754,6 +766,13 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <p>Hiding each whole dataset in turn, the estimate still rose with wear on every unseen machine (median 0.70 to 1.00), but its absolute scale was off on two of them: on NASA and the VMC 650 shop it was worse than guessing (0.44 and 0.40), mainly because "end of life" means different things there (a wear limit, or the operator's call) than in ours (breakage).</p>
 <p>The raw signals agree: on every machine at least one of the two rose with wear. Spindle load rose clearly on NASA and Hannover (rank correlation with life 0.97 each), less on the VMC shop (0.57) and ours (0.72), and hardly on MSTW (0.14), where vibration carried the wear instead (0.96). On NASA, vibration even fell slightly (−0.25).</p>
 <figure><img src="img/results/cross_dataset.png" alt="Life-fraction error on our cutters by training data" loading="lazy"><figcaption>Life-fraction error on our cutters by training data</figcaption></figure>
+<p><strong>Pretraining our main model on the other machines.</strong> We then used those 73 other lives to give the main TCN a head start (<code>scripts/26_pretrain_transfer.py</code>). First it learned to estimate the fraction of life used from the other four datasets' spindle load and vibration alone, without ever seeing one of our cutters. Then it was trained on our 12 training cutters with its normal inputs plus those two shared signals, and tested on the hidden one, as always. To check that any gain comes from the pretraining and not from the two added signals, we also trained the same model from scratch.</p>
+<ul>
+<li>Before any training on our data, the pretrained network already tracked life used on our cutters with an error of 0.17 (always guessing 0.5 scores 0.25).</li>
+<li>After training on ours, its error over the whole life was unchanged: 22.0 cycles, against 21.9 for the main TCN and 22.2 from scratch.</li>
+<li>In the last 20% of life it was better: 14.5 cycles, against 15.9 and 16.3, and better than the main TCN on 9 of 13 cutters. But the 95% interval of that 1.4-cycle gain runs from −1.2 to 4.1 cycles, so with 13 cutters it is a hint, not a result.</li>
+</ul>
+<p>Two cautions: in the other datasets a life ends at a wear limit or the operator's call, not at breakage, and one "run" is a different amount of cutting in each dataset. So the head start teaches the general shape of a cutter's last stretch, not our cutters' exact timing.</p>
 
 </section>
 <section id="from-prediction-to-decision">
@@ -908,6 +927,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 8px 0; }
 <p><strong>Why not combine the two?</strong> We tried a 50/50 average of the TCN and the settings-only model. It helps on the 12 ordinary cutters (17.7 whole life, 12.7 in the last 20%) but hurts cutter 10 (75 cycles off), so overall it is not better (22.1). Knowing when to trust the settings needs more cutters with unusual settings than we have.</p>
 <p><strong>Is 22 cycles of error good?</strong> It depends on the cutter: 4 to 9 cycles on short-lived cutters, 30 to 55 on the longest-lived ones, which have almost no similar cutter to learn from. That is why the decision uses the risk curve near the end of life, where the model is most accurate, not a single number.</p>
 <p><strong>Would more data help?</strong> Yes: the learning curve (section 7) is still falling steeply at 12 cutters.</p>
+<p><strong>Why not use the other datasets to train the main model?</strong> Their lives end differently (wear limit or operator's call, not breakage), and their sensors and cut sizes differ, so they cannot simply be added. We did use them as a head start: pretraining the TCN on their 73 lives, then training it on ours, left the whole-life error unchanged (22.0) and cut the last-20% error from 15.9 to 14.5 cycles, better on 9 of 13 cutters, but within the noise of 13 cutters (section 7). It is the most promising lead we have, and confirming it needs more of our own cutters.</p>
 <p><strong>Why did the end-to-end CNN on raw vibration lose?</strong> It has to learn its own features from 10 or 11 cutter lives. Our physics features already encode what to listen for (tooth rhythm, once-per-turn beat, load), which is knowledge the network would need many more cutters to discover.</p>
 <p><strong>Your risk curves are overconfident. Why not calibrate them?</strong> We did (section 8). Rescaling the curves by one or two numbers fitted on the other cutters made them honest but flat, and flat curves cannot tell the rule <em>when</em> to change, so the decisions got worse in most cost settings. We report it as a negative result rather than tune more ways until one wins.</p>
 <p><strong>Why use reinforcement learning if the exact best rule can be calculated?</strong> For one cutter it can, so we used that as a check of our RL setup. RL is only needed when decisions interact (one setter, three machines, slowing down). There, RL did not beat good rules, and we say so.</p>

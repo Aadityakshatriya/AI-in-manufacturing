@@ -46,12 +46,14 @@ GROUP = {
     REF: "Neural networks, TCN inputs",
     **{n: "Neural networks, TCN inputs" for n in ("linear_hazard", "mlp_now", "gru", "lstm", "transformer", "tcn_direct")},
     "TCN: autoencoder health score": "TCN, other inputs", "TCN: physics + autoencoder": "TCN, other inputs",
-    **{n: "TCN, other inputs" for n in ("tcn_currents_only", "tcn_vibration_only", "tcn_no_age")},
+    **{n: "TCN, other inputs" for n in ("tcn_currents_only", "tcn_vibration_only", "tcn_no_age",
+                                         "tcn_pretrained", "tcn_shared_inputs")},
     "raw_cnn": "Raw vibration, end to end",
 }
 # Clearer names on the slides than the registry's.
 RENAME = {"lgbm_summaries": "LightGBM: 120 summaries + settings + age",
-          "lgbm_history_summaries": "LightGBM + history: 120 summaries + settings + age"}
+          "lgbm_history_summaries": "LightGBM + history: 120 summaries + settings + age",
+          "tcn_pretrained": "TCN pretrained on 73 other lives", "tcn_shared_inputs": "TCN + 3 shared signals (control)"}
 SKIP = {"lgbm_plain", "tcn"}  # same models as "LightGBM: same inputs as the TCN" and "TCN: physics features"
 
 

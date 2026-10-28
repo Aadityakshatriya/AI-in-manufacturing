@@ -1,0 +1,3 @@
+name,label,family,inputs,uses_history,what_it_assumes
+tcn_pretrained,"TCN pretrained on 73 other machines' lives, then fine-tuned","convolution + hazard curve, transfer",physics features + settings + age + 3 shared signals (32),yes,how a cutter's load and vibration evolve towards the end of its life carries over between machines
+tcn_shared_inputs,"TCN + 3 shared signals, no pretraining (control)",convolution + hazard curve,physics features + settings + age + 3 shared signals (32),yes,same as the main TCN; the control for pretraining
