@@ -1,13 +1,13 @@
 # Review 2 video script: final deck
 
-**Length:** about 7½ minutes (1007 spoken words at about 135 words a minute, plus slide changes).
+**Length:** 788 spoken words, about 6½–7 minutes at a calm presenting pace (about 120 words a minute) with slide changes.
 **Deck:** 10 main slides and 3 backup slides (ToolLife Policy Review 2 Final). The same words are in each slide's speaker notes.
 **Speakers:** 5. Nobody introduces themselves; each speaker hands over by name.
 **Rule for every speaker:** say the numbers exactly as written. Every number is a measured result from our code, on cutters the model never saw. Errors are in cycles; costs are rupees per good cycle.
 
 ---
 
-## Yadu: the problem in one slide, and the data (about 85 seconds)
+## Yadu: the problem in one slide, and the data (about 75 seconds)
 
 **Slide 1: ToolLife Policy**
 
@@ -15,47 +15,47 @@
 
 **Slide 2: A breakage costs ₹6,530; a planned change ₹3,133**
 
-> A quick reminder of the problem. A milling cutter wears a little on every cut, until it snaps; these fourteen did. A breakage costs about six and a half thousand rupees, twice a planned change. So on every cycle our system reads the sensors, the TCN turns them into a risk curve, and a cost rule decides: keep cutting and check again next cycle, or change the cutter now. Everything we promised at Review 1 is built.
+> A milling cutter wears a little on every cut until it snaps; these fourteen did. A breakage costs about twice a planned change. So every cycle, our system reads the sensors, the TCN turns them into a risk curve, and a cost rule decides: keep cutting, or change the cutter now. Everything we promised at Review 1 is built.
 
 **Slide 3: Fourteen cutters, each run until it broke**
 
-> The data is from Piecuch and Żabiński, 2025: one Haas milling machine, and fourteen cutters run until they broke. Nine hundred and sixty-eight cycles, eight vibration sensors, twelve motor currents, a hundred and twelve gigabytes. The lives range from fifteen cycles to a hundred and fifty. Cutter eleven, in grey, broke on its first cycle, so we leave it out. Thirteen lives is our real sample size, because each life gives exactly one breaking point. Over to Bhuwan.
+> The data is from Piecuch and Żabiński, 2025: fourteen cutters on one machine, run until they broke. Nine hundred and sixty-eight cycles, twenty sensors, a hundred and twelve gigabytes. Cutter eleven, in grey, broke on its first cycle, so we leave it out. That makes thirteen lives, our real sample size, since each life gives one breaking point. Over to Bhuwan.
 
-## Bhuwan: data pre-processing and feature engineering (about 95 seconds)
+## Bhuwan: data pre-processing and feature engineering (about 70 seconds)
 
 **Slide 4: From a raw recording to one row per cycle**
 
-> Each cycle arrives as a raw recording, about two minutes long. We keep only the actual cutting: the spindle current shows when the cutter is in the steel, here twenty-seven seconds out of a hundred and fifteen. We take each sensor's spectrum; the blue lines are the tooth hits, two hundred and thirteen a second. From that we compute twenty-two physics numbers, and divide each by the same cutter's first three clean cycles, because what matters is change since new. We only ever use cycles already seen, never the future. The result is one row per cycle; darker means more change.
+> Each cycle is a raw recording, about two minutes long. We keep only the cutting, which the spindle current shows: here, twenty-seven seconds. We take each sensor's spectrum; the blue lines are the tooth hits. From that we compute twenty-two physics numbers, and divide each by the cutter's first three cycles, because what matters is change since new. We never use the future. The result is one row per cycle; darker means more change.
 
 **Slide 5: 22 physics numbers, plus 7 for context**
 
-> The twenty-two numbers come in four families. Load: how hard the motors work, since a blunt cutter rubs and the steel pushes back. Vibration: how loud, and how high-pitched. Rhythms: the beat of the four teeth, and the once-per-turn beat a chipped tooth adds. And impacts: sharp spikes. On the right are two of them over every cutter's life, and both climb towards the end. We checked that this is wear, not the cutter's position in the block: with position removed, table current still tracks life at zero point nine four. With five settings, the cycle count and a first-ring flag, the model gets twenty-nine inputs per cycle. Amal.
+> The twenty-two numbers come in four families: load, meaning how hard the motors work; vibration; rhythms, the beat of the teeth, where a chipped tooth shows; and impacts. On the right, two of them over every cutter's life: both climb towards the end. We checked it is wear, not position in the block. With the settings, the cycle count and a first-ring flag, the model gets twenty-nine inputs per cycle. Amal.
 
 ## Amal: model selection and architecture (about 55 seconds)
 
 **Slide 6: A causal TCN that looks back about 60 cycles**
 
-> We tried five kinds of model. LightGBM looks at one cycle at a time, with no memory, so it became our yardstick. A one-D CNN on raw vibration could not learn from only thirteen lives. An autoencoder health score did worse than our physics numbers. LSTM, GRU and Transformer were no more accurate. We chose a TCN, a temporal convolutional network. It is causal: as the picture shows, every output looks only backwards, never at the future, just like a real machine. Four blocks with gaps of one, two, four and eight let it see about sixty cycles back with only a hundred and nine thousand weights. Its head gives the chance of breaking on each coming cycle: the risk curve our cost rule needs. Rafiq.
+> We tried five kinds of model. LightGBM has no memory of past cycles, so it became our yardstick. A CNN on raw vibration could not learn from thirteen lives. An autoencoder health score did worse than our physics numbers. LSTM, GRU and Transformer were no more accurate. We chose a TCN, a temporal convolutional network. It is causal: it only looks back, never at the future, like a real machine. Four blocks with growing gaps let it see about sixty cycles with a hundred and nine thousand weights. It outputs the chance of breaking on each coming cycle: the risk curve our cost rule needs. Rafiq.
 
-## Rafiq: training and evaluation (about 100 seconds)
+## Rafiq: training and evaluation (about 85 seconds)
 
 **Slide 7: Every test cutter is one the model never saw**
 
-> To test honestly with thirteen cutters, we hide one whole cutter, train on the other twelve with five random starts, average them, and predict the hidden one. We repeat that thirteen times, so every cutter is tested by a model that never saw it. Training uses a survival loss, the AdamW optimiser and four hundred passes. Why not a normal seventy-thirty split? Shuffling cycles puts the same cutter on both sides: the error drops to about six, and that is a leak, not skill. Splitting by whole cutters is honest, but the answer swings from nine to thirty-eight depending on which four cutters land in the test.
+> To test honestly, we hide one whole cutter, train on the other twelve with five random starts, and predict the hidden one. We repeat that thirteen times, so every cutter is tested by a model that never saw it. Why not seventy-thirty? A random split puts the same cutter on both sides: the error drops to about six, but that is a leak. Splitting by whole cutters is honest, but swings from nine to thirty-eight depending on which cutters land in the test.
 
 **Slide 8: Sensors help; the network type barely matters**
 
-> Here is every main model on unseen cutters, as the average number of cycles it is off by. A TCN that knows only the cutter's age is off by twenty-eight. With our physics features, twenty-two. That six-cycle gain from the sensors is real. Settings alone get to twenty-six and are hard to beat on ordinary cutters. But on cutter ten, the only one on a long holder, they were off by a hundred and twenty-three cycles; the TCN, seeing it shake, by twenty-eight. Between models, it is a tie: Transformer, LSTM, LightGBM and our TCN are closer together than one model re-run with new random starts. Thirty-three models, over thirteen hundred networks, one test. Aaditya.
+> Here is every main model on unseen cutters, in cycles of error. A TCN that knows only the cutter's age is off by twenty-eight; with our physics features, twenty-two. That six-cycle gain from sensors is real. Settings alone are hard to beat on ordinary cutters, but on cutter ten, the only one on a long holder, they were off by over a hundred cycles; the TCN, seeing it shake, by twenty-eight. Between models it is a tie: they are closer together than one model re-run. Aaditya.
 
-## Aaditya: model implementation: the working system and its decisions (about 115 seconds)
+## Aaditya: model implementation: the working system and its decisions (about 105 seconds)
 
 **Slide 9: From a raw recording to keep-or-change**
 
-> This is the system, as running code: four scripts in a chain. The first turns raw sensor counts into units and keeps only the cutting. The second computes the twenty-two physics numbers. The third trains the TCN in PyTorch: thirteen folds, five random starts each, four hundred passes. The fourth turns each risk curve into keep or change. Across the whole comparison that is over thirteen hundred networks, on a laptop and a cloud machine. On the left is cutter one-oh-three, never seen in training. Black is the truth, blue is our prediction. Early on it is too hopeful: almost a hundred cycles, against sixty. As wear builds it closes in, meeting the truth near cycle forty. At forty-seven the rule changes the cutter. It would have broken at sixty.
+> This is the system as running code: four scripts in a chain. The first cleans the raw signal and keeps only the cutting. The second computes the physics numbers. The third trains the TCN in PyTorch, thirteen folds with five random starts each; over thirteen hundred networks across the whole comparison. The fourth turns each risk curve into keep or change. On the left is cutter one-oh-three, never seen in training. Black is the truth, blue our prediction. Early on it is too hopeful, but as wear builds it closes in and meets the truth near cycle forty. At forty-seven the rule changes the cutter. It would have broken at sixty.
 
 **Slide 10: Ten breakages down to five**
 
-> Now the decision, which is what a shop pays for. We replay all thirteen cutters cycle by cycle, each rule tuned on the other twelve, at Indian shop costs. Run to failure: all thirteen break. Change every N cycles, the usual practice: ten still break. Our rule with the TCN: five break, and the cost per good cycle falls from ninety-nine rupees to ninety-three. That six percent is promising, not proven: with thirteen cutters, its range runs from minus nine to plus twenty-one percent. What does hold up is the sensors: the same rule on a TCN without them costs a hundred and eleven rupees. Perfect knowledge would cost fifty-nine, and our error is still falling as cutters are added. So the next step is more run-to-failure data. Thank you.
+> Now the decision. We replay all thirteen cutters cycle by cycle at Indian shop costs. Run to failure, and all thirteen break. Change every N cycles, the usual practice, and ten still break. Our rule with the TCN: five break, and the cost per good cycle falls from ninety-nine rupees to ninety-three. That six percent is promising, not proven, with thirteen cutters. What does hold up is the sensors: the same rule without them costs a hundred and eleven. Perfect knowledge would cost fifty-nine, and our error is still falling as cutters are added. So the next step is more data. Thank you.
 
 ---
 
