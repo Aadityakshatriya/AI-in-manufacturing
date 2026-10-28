@@ -1,81 +1,81 @@
-# Review 2 video script: what we built
+# Review 2 video script: final deck
 
-**Length:** about 8 minutes (about 1,050 spoken words at a calm pace, plus slide pauses).
-**Speakers:** 5. Names go on screen; nobody introduces themselves.
-**Rule for every speaker:** say the numbers exactly as written. Every number here is a measured result from our code, tested on cutters the model never saw. Do not round them up.
-The headings and slide notes are not spoken. The same words are in each slide's speaker notes.
-
----
-
-## Speaker 1 — Bhuwan: the problem, and what changed since Review 1 (about 75 seconds)
-
-**Slides 1–3:** title; broken cutters; what we built.
-
-> A CNC milling cutter wears a little on every cut, until one day it snaps. Change it too early and you throw money away. Change it too late and it breaks in the middle of a part.
->
-> In our data, fourteen cutters were run until they broke. One lasted fifteen cycles, another a hundred and fifty, and one broke on its very first cycle. So "change it every N cycles" cannot be right for all of them.
->
-> At Review 1 we promised to predict how many cycles a cutter has left, and to turn that into a keep-or-change decision. Since then we have built the whole thing, and three things are new. We added four other factories' machines, eighty-six cutter lives in total. We tested our model against thirty others, in exactly the same way. And we put reinforcement learning in charge of a small simulated workshop. Yadu will start with what the machine actually feels.
-
-## Speaker 2 — Yadu: what the machine feels as a cutter wears (about 80 seconds)
-
-**Slides 4–5:** tooth hits and motor current; wear in the signals.
-
-> The cutter has four teeth and spins fifty-three times a second, so the steel gets hit two hundred and thirteen times a second. Sensors on the table hear every one of those hits as vibration.
->
-> The machine also has electricity meters on its motors. When the cutter goes blunt, it rubs instead of slicing, so the steel pushes back harder and the motor that moves the table has to work harder.
->
-> We checked this on all thirteen normal cutters. The table motor's current rose in every single one: over the last tenth of its life, it was one point three to two point seven times its value when new. The once-per-turn beat in the vibration, the sign of a chipped tooth, at least doubled in ten of thirteen.
->
-> We also checked that this is wear, and not just where the cutter happens to be in the steel block. It is. So the wear we cannot see shows up in signals we can measure. Amal will explain the data.
-
-## Speaker 3 — Amal: our data, fair testing, and other factories (about 105 seconds)
-
-**Slides 6–8:** our data and the test; four other factories; transfer between machines.
-
-> Our main dataset is from Rzeszów University of Technology: fourteen cutters, nine hundred and sixty-eight cycles, and a hundred and twelve gigabytes of raw vibration and current.
->
-> We test honestly. We hide one whole cutter, train on the rest, predict the hidden one, and repeat for every cutter. A random split would let the model peek at the cutter it is tested on. Before this review we went looking for leaks in our own work, found three, and fixed them. Every number today is after the fixes.
->
-> Thirteen cutters is not much, so we added four public datasets from other machines: NASA, Hannover, MSTW, and a production shop in India. We put them on one footing: every signal is compared with the same cutter when it was new, and age becomes the fraction of its life used.
->
-> Then we asked: does what other machines teach transfer to ours? A model trained only on the four other factories, which never saw our machine, estimated how much of our cutters' life was used with an error of zero point one eight. Trained on our own cutters, zero point one seven. That difference is within the noise. Aaditya will explain our models.
-
-## Speaker 4 — Aaditya: the models, and what they tell us (about 150 seconds)
-
-**Slides 9–13:** autoencoder; TCN; settings vs sensors; thirty other models; would more cutters help.
-
-> We built two networks. The first is a CNN autoencoder, about four million learned numbers. It squeezes a fraction of a second of vibration into sixty-four numbers and rebuilds it, and we trained it only on healthy cutting. On cutters it never heard, its rebuild error rose with wear in twelve of thirteen. But honestly, it did not need four million numbers: PCA, a straight-line version, did as well, and a simple distance from healthy on our physics features did better.
->
-> The second is a TCN, a temporal convolutional network. After every cycle it reads the cutter's history and draws a risk curve: the chance of breaking on each of the next cycles. On hidden cutters it is off by twenty-one point nine cycles on average, and by fifteen point nine in the last fifth of the cutter's life. That is level with LightGBM. Adding the autoencoder's score did not help.
->
-> The most important thing we learned is this. The settings of the cut, like how wide it is and how long the holder is, already explain most of a cutter's life. On the twelve ordinary cutters, a model with no sensors at all is more accurate over the whole life. Sensors help near the end, and above all when something unexpected happens. Cutter ten was the only one on a long holder: the settings models were off by a hundred and twenty-three cycles. The TCN, reading its vibration, was off by twenty-eight.
->
-> To check that we had not just picked a model we liked, we ran thirty other models through the same test: classical machine learning, LSTM, GRU, a transformer, and a CNN on the raw vibration. The good ones are all within the noise of each other. What a model is given matters more than its architecture.
->
-> And when we trained the TCN on fewer cutters, its error was still falling steeply at twelve. The limit is data, not the model. Rafiq will show what this means for decisions.
-
-## Speaker 5 — Rafiq: decisions, reinforcement learning, and what we learned (about 120 seconds)
-
-**Slides 14–17:** replay of real cutters; decisions; the RL workshop; what we learned.
-
-> The real question is: keep this cutter, or change it now? Our rule compares the cost of the risk of breaking with the cost of a planned change. For an Indian job shop, that is about three thousand one hundred rupees for a planned change, and six thousand five hundred for a breakage.
->
-> We replayed all thirteen real cutters, cycle by cycle. Changing every N cycles let ten of thirteen break. Our rule on the TCN's risk curves let five break and was six percent cheaper, though with thirteen cutters that is not yet certain. The same network with sensors was sixteen percent cheaper than without them, and cheaper in all twenty-four cost settings we tried. But a simple survival model on the settings did about as well as the TCN, because a decision needs honest probabilities, and our network is too confident. Perfect knowledge would save forty percent, so that is where the money is.
->
-> We also tried reinforcement learning, PPO and DQN, in a three-machine workshop. They did not beat well-tuned rules. They learned to slow the machines down, which cut breakages, but kept doing it even when it did not pay.
->
-> What we learned: the signals carry wear on every machine we checked. Settings explain most of a cutter's life, and sensors catch the unexpected. And with thirteen cutters, the limit is data. Thank you.
+**Length:** about 7½ minutes (1015 spoken words at about 135 words a minute, plus slide changes).
+**Deck:** 10 main slides and 3 backup slides (ToolLife Policy Review 2 Final). The same words are in each slide's speaker notes.
+**Speakers:** 5. Names are in each slide's footer; nobody introduces themselves.
+**Rule for every speaker:** say the numbers exactly as written. Every number is a measured result from our code, on cutters the model never saw. Errors are in cycles; costs are rupees per good cycle.
 
 ---
 
-## If a reviewer asks
+## Yadu: the problem in one slide, and the data (about 85 seconds)
 
-The answers are in section 11 of `PROJECT_EXPLAINED.md`. The ones most likely to come up: why not a random split; is the signal rise just position in the block; why a 4-million-number autoencoder if PCA does as well; why a TCN and not an LSTM or a transformer; why not use the best model of the thirty; why sensors at all if the settings model is better on ordinary cutters; and why the decision rule is not tuned.
+**Slide 1: ToolLife Policy**
 
-## Slide notes for whoever edits the video
+> This is ToolLife Policy, our Review 2. Review 1 set out the problem and the data. Today: how we prepared the data, the model we chose, how we tested it, and the working system.
 
-- The deck's speaker notes hold exactly these words, slide by slide.
-- Slide images are in `docs/img/` and `results/figures/`. The broken-cutter photos are from the dataset paper (CC BY 4.0); credit is on the last slide.
-- Keep each speaker's slides on screen while they talk; no animations needed.
-- If a speaker runs long, cut their last sentence before cutting any number.
+**Slide 2: A broken cutter costs twice a planned change**
+
+> A quick reminder. A milling cutter wears a little on every cut, until it snaps; these fourteen did. A planned change costs about three thousand one hundred rupees, a breakage about six and a half thousand, twice as much. So on every cycle the question is: keep it, or change it now? Our system reads the sensors, estimates the cycles left as a low, middle and high value, weighs that against the two costs, and decides. Everything we promised at Review 1 is built.
+
+**Slide 3: Fourteen cutters, each run until it broke**
+
+> The data is from Piecuch and Żabiński, 2025. Fourteen cutters run until they broke: nine hundred and sixty-eight cycles, eight vibration sensors, twelve motor currents, a hundred and twelve gigabytes. The lives range from fifteen cycles to a hundred and fifty. Cutter eleven, in grey, broke on its first cycle, so we leave it out. That leaves thirteen lives, and that is our real sample size, because each life gives exactly one breaking point. Over to Bhuwan.
+
+## Bhuwan: data pre-processing and feature engineering (about 90 seconds)
+
+**Slide 4: From a raw recording to one clean row per cycle**
+
+> Each cycle arrives as raw sensor counts. First, we convert them to amps and metres per second squared. Second, we keep only the cutting: the spindle current shows when the cutter is in the steel, here twenty-seven seconds out of a hundred and fifteen. Third, we take each sensor's spectrum, to see how loud the vibration is and at what pitch. Fourth, and most important, every number is divided by the same cutter's value in its first three clean cycles, because what matters is change since new. And we only ever use cycles already seen, never the future.
+
+**Slide 5: 22 physics numbers per cycle**
+
+> From each cycle we compute twenty-two physics numbers in four families. Load: how hard the motors work, since a blunt cutter rubs and the steel pushes back. Vibration level and pitch. Rhythms: the four teeth make a beat, and a chipped tooth adds a once-per-turn beat. And impacts: sharp spikes. On the right, the table current and the high-pitched vibration both climb towards the end of life. And it is wear, not position in the block: with position removed, table current still tracks life at zero point nine four. With the settings, the cycle count and a first-ring flag, that is twenty-nine inputs per cycle. Amal.
+
+## Amal: model selection and architecture (about 55 seconds)
+
+**Slide 6: A causal TCN that looks back about 60 cycles**
+
+> We tried five kinds of model. LightGBM looks at one cycle at a time, with no memory, so it became our yardstick. A one-D CNN on raw vibration could not learn from only thirteen lives. An autoencoder health score did worse than our physics numbers. LSTM, GRU and Transformer were no more accurate. We chose a TCN, a temporal convolutional network. It is causal: it uses only the past, never the future, just like a real machine. Four blocks with gaps of one, two, four and eight let it look back about sixty cycles with only a hundred and nine thousand weights. And it outputs the chance of breaking on each of the next hundred and sixty cycles: the risk curve our cost rule needs. Rafiq.
+
+## Rafiq: training and evaluation (about 100 seconds)
+
+**Slide 7: Every test cutter is one the model never saw**
+
+> To test honestly with thirteen cutters, we hide one whole cutter, train on the other twelve, and test on it, thirteen times over. Every cutter is tested by a model that never saw it. Why not seventy-thirty? A random split of cycles puts the same cutter on both sides: the error drops to six point four, and that is a leak, not skill. Seventy-thirty by whole cutters is honest, but it swings from nine to thirty-eight depending on which four cutters land in the test. Training uses a survival loss, the AdamW optimiser, four hundred passes, and five random starts averaged.
+
+**Slide 8: Sensors help; the network type barely matters**
+
+> All results are on unseen cutters, in cycles of error. A TCN that knows only the cutter's age is off by twenty-eight. With our physics features, twenty-two, and sixteen in the last fifth of life, when it matters most. That six-cycle gain is real. Settings alone get to twenty-six and are hard to beat on ordinary cutters. But on cutter ten, the only one on a long holder, they were off by a hundred and twenty-three cycles; the TCN, seeing it shake, by twenty-eight. Between models, it is a tie: Transformer, LSTM, LightGBM and our TCN all land between twenty-one and twenty-two, less than the swing from re-running one model. Thirty-three models, over thirteen hundred networks, one test. Aaditya.
+
+## Aaditya: model implementation: the working system and its decisions (about 120 seconds)
+
+**Slide 9: From a raw recording to keep-or-change, every cycle**
+
+> This is the whole system, and all of it runs. A raw recording comes in. The convert step turns counts into units and keeps only the cutting. The feature step computes the twenty-two physics numbers. The TCN, in PyTorch, reads the recent history and outputs a risk curve. The decision step weighs that curve against the two costs: keep, or change. Every model was trained thirteen folds times five random starts; over thirteen hundred networks, on a laptop and a cloud machine. On the right is cutter one-oh-three, never seen in training. Black is the truth, blue is our prediction. Early on it is too hopeful: almost a hundred cycles, against sixty. As wear builds it closes in, meeting the truth near cycle forty. At forty-seven the rule changes the cutter. It would have broken at sixty.
+
+**Slide 10: Ten breakages down to five**
+
+> Now the decision, which is what a shop pays for. We replay all thirteen cutters cycle by cycle, each rule tuned on the other twelve, at Indian shop costs. Run to failure: all thirteen break. Change every N cycles, the usual practice: ten still break. Our rule with the TCN: five break, and the cost per good cycle falls from ninety-nine rupees to ninety-three. That six percent is promising, not proven: with thirteen cutters, its range runs from minus nine to plus twenty-one percent. What does hold up is the sensors: the same rule on a TCN without them costs a hundred and eleven rupees. Perfect knowledge would cost fifty-nine, forty percent less, and our error is still falling as cutters are added. So the next step is more run-to-failure data. Thank you.
+
+---
+
+## Backup slides: only if a reviewer asks
+
+**What the model says about cutter 103** (Aaditya)
+
+> These are the risk curves the decision rule actually reads, for cutter 103, which the model never saw. Each bar is the chance the cutter breaks on that cycle from now. After cycle six, there is almost no risk inside the next fifty-four cycles: calm, and correct. After cycle thirty-one, the risk peaks about thirty-five cycles ahead; it really broke twenty-nine later, so it is a few cycles late. After cycle fifty-one, the risk sits in the next one to three cycles; it really broke nine later, so near the end the model is cautious, which is the safe direction. The two commands rebuild every prediction and every decision from the processed data.
+
+**Chosen first, then tested against 32 rivals** (Amal or Aaditya)
+
+> We fixed the TCN as the main model before running any rival, so it cannot be the luckiest of thirty-three. It was chosen for the job: it is causal, it is small enough for thirteen lives, and it outputs a risk for each future cycle, which the cost rule needs. It is not the top score. The same TCN on the dataset's own hundred and twenty summaries scored nineteen point two, but its edge over our physics features has a ninety-five percent interval of minus one point five to plus seven point three cycles, so it could be luck. It does hint that our hand-picked features leave something out, and we report that rather than switch. Raw-signal learning, the one-D CNN at thirty-one point seven, failed because thirteen lives are too few.
+
+**Why our 13 lives are the main data** (Yadu or Aaditya)
+
+> We did look at other datasets: NASA, Hannover, MSTW, an Indian VMC 650 shop, PHM 2010 and MATWI. None of them can be the main data, because in none of them does a life end in a breakage. They stop at a wear limit, or when an operator decides, or not at all. Our question is when a cutter breaks, so only our thirteen lives answer it directly. That is the real issue: each life gives exactly one breaking point, so more cycles do not help, only more cutters. The other data is still useful for learning how signals change with wear. A model trained only on the other machines estimated life used on our cutters with an error of zero point one eight two, against zero point one seven two for a model trained on ours; that difference is within the noise. Pretraining our TCN on seventy-three other lives gave twenty-two point zero and fourteen point five, no clear gain over our model.
+
+## Notes for whoever edits the video
+
+- Keep each speaker's slide on screen while they talk; the deck uses only fades.
+- If a speaker runs long, cut a sentence before cutting any number.
+- The broken-cutter photo and the data credit are from Piecuch & Żabiński (2025), CC BY 4.0.
+- Charts are drawn by `scripts/28_review2_charts.py` into `results/figures/review2/`.
