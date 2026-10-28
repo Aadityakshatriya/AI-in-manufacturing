@@ -159,7 +159,7 @@ def splits():
     fig, ax = plt.subplots(figsize=(9.6, 4.8))
     lg = pd.read_csv(ROOT / "results" / "models" / "split_comparison_lgbm.csv")
     tc = pd.read_csv(ROOT / "results" / "models" / "split_comparison_tcn.csv")
-    rows = [("random 70/30 of cycles", lg[lg.split == "rows 70/30"].whole, ORANGE),
+    rows = [("random 70/30 of cycles (LightGBM)", lg[lg.split == "rows 70/30"].whole, ORANGE),
             ("70/30 by cutter (20 splits)", tc[tc.split == "cutters 70/30"].whole, GREY),
             ("hide one cutter, 13 times", tc[tc.split == "leave one out"].whole, BLUE)]
     for y, (lab, v, col) in enumerate(rows):
@@ -170,6 +170,8 @@ def splits():
         else:
             ax.scatter(v, y + rng.uniform(-0.16, 0.16, len(v)), s=55, color=col, edgecolor=BG, lw=0.8)
             ax.text(v.max() + 1.3, y, f"{v.min():.1f}–{v.max():.1f}", va="center", fontsize=14, color=INK)
+        if y == 0:
+            ax.text(v.max() + 8.5, y, "leak: the same cutter is in training and test", va="center", fontsize=14, color=ORANGE)
     ax.set_yticks(range(3), [r[0] for r in rows], fontsize=14)
     ax.set_ylim(2.6, -0.6)
     ax.set_xlim(0, 46)
@@ -187,24 +189,26 @@ def results():
             ("LSTM", "Zoo: LSTM"),
             ("Transformer", "Zoo: Causal transformer"),
             ("TCN, physics features (ours)", "TCN: physics features")]
-    fig, ax = plt.subplots(figsize=(9.6, 5.4))
+    fig, ax = plt.subplots(figsize=(12.8, 5.5))
     y = np.arange(len(pick))
     w = [cs.loc[k, "whole_life"] for _, k in pick]
-    l = [cs.loc[k, "last20"] for _, k in pick]
     col = [BLUE if "ours" in lab else GREY for lab, _ in pick]
-    ax.barh(y - 0.19, w, height=0.36, color=col)
-    ax.barh(y + 0.19, l, height=0.36, color=col, alpha=0.45)
-    for yi, a, b in zip(y, w, l):
-        ax.text(a + 0.6, yi - 0.19, f"{a:.1f}", va="center", fontsize=12.5, color=INK)
-        ax.text(b + 0.6, yi + 0.19, f"{b:.1f}", va="center", fontsize=12.5, color=INK2)
-    ax.set_yticks(y, [p[0] for p in pick], fontsize=13.5)
+    ax.barh(y, w, height=0.58, color=col)
+    for yi, a in zip(y, w):
+        ax.text(a + 0.6, yi, f"{a:.1f}", va="center", fontsize=14, color=INK)
+    ax.set_yticks(y, [p[0] for p in pick], fontsize=14)
     ax.invert_yaxis()
     ax.grid(axis="y", visible=False)
-    ax.set_xlim(0, 42)
+    ax.set_xlim(0, 56)
+    ax.set_xticks(range(0, 41, 5))
+
+    def bracket(x, y0, y1, text):
+        ax.plot([x - 0.4, x, x, x - 0.4], [y0, y0, y1, y1], color=INK, lw=1.3, clip_on=False)
+        ax.text(x + 0.8, (y0 + y1) / 2, text, va="center", fontsize=14, color=INK, linespacing=1.4)
+
+    bracket(26.5, 3, 6, "a tie: closer together\nthan one model re-run\nwith new random starts")
+    bracket(40.5, 1, 6, "sensors:\n6 cycles better,\na real gap\n(2.6–9.5)")
     ax.set_xlabel("average error in cycles left on unseen cutters (lower is better)")
-    from matplotlib.patches import Patch
-    ax.legend(handles=[Patch(color=GREY, label="whole life"), Patch(color=GREY, alpha=0.45, label="last 20% of life")],
-              frameon=False, loc="lower right", fontsize=12.5)
     save(fig, "results.png")
 
 
@@ -235,7 +239,7 @@ def decisions():
             ("Our rule, settings-only model", pick("weibull_settings_age", "dp"), GREY),
             ("Our rule, TCN (sensors)", pick("history_physics", "dp"), BLUE),
             ("Perfect knowledge", pick("history_physics", "oracle"), "#DDE1E5")]
-    fig, ax = plt.subplots(figsize=(9.6, 4.8))
+    fig, ax = plt.subplots(figsize=(12.8, 5.4))
     y = np.arange(len(rows))
     v = [r[1].cost_per_good for r in rows]
     ax.barh(y, v, color=[r[2] for r in rows], height=0.6)
@@ -243,9 +247,14 @@ def decisions():
         ax.text(r.cost_per_good + 1.5, yi, f"₹{r.cost_per_good:.0f}   ·   {int(r.breakages)} of 13 broke", va="center", fontsize=13, color=INK)
     ax.set_yticks(y, [r[0] for r in rows], fontsize=13.5)
     ax.invert_yaxis()
-    ax.set_xlim(0, 175)
+    ax.set_xlim(0, 215)
+    ax.set_xticks(range(0, 121, 20))
     ax.grid(axis="y", visible=False)
     ax.set_xlabel("cost per good cycle, ₹ (lower is better)")
+    x = 152
+    ax.plot([x - 2, x, x, x - 2], [1, 1, 3, 3], color=INK, lw=1.3, clip_on=False)
+    ax.text(x + 3, 2, "half the breakages,\n6% cheaper\n(not yet certain:\n−9% to +21%)", va="center", fontsize=14,
+            color=INK, linespacing=1.4)
     save(fig, "decisions.png")
 
 
@@ -269,7 +278,100 @@ def risk_curves():
     save(fig, "risk103.png")
 
 
+FAMILIES = [  # the TCN's 22 physics inputs, in the four families the deck names
+    ["spindle_net_a", "table_cut_a", "x_cut_a", "y_cut_a", "spindle_charge_per_mm3", "table_over_spindle"],
+    ["X_Driving_axle_pZ__rms", "X_Driving_axle_mX__rms", "Y_Driving_axle_pY__rms", "Spindle_mX__rms",
+     "X_Driving_axle_pZ__hiband_rms", "Y_Driving_axle_pY__hiband_rms", "Spindle_mX__hiband_rms"],
+    ["X_Driving_axle_pZ__tooth", "X_Driving_axle_mX__tooth", "Y_Driving_axle_pY__tooth", "X_Driving_axle_pZ__order1",
+     "X_Driving_axle_mX__order1", "X_Driving_axle_pZ__asym", "X_Driving_axle_pZ__sync_frac"],
+    ["X_Driving_axle_pZ__kurt", "Spindle_mX__kurt"],
+]
+
+
+def minis():
+    """Small text-free plots that sit inside the deck's flowchart boxes (one real cycle, cutter 8)."""
+    from matplotlib.colors import LinearSegmentedColormap
+    from scipy.signal import welch
+
+    card = "#FFFFFF"
+
+    def mini(name, draw, size=(4.48, 2.0)):
+        fig, ax = plt.subplots(figsize=size)
+        fig.patch.set_facecolor(card)
+        ax.set_facecolor(card)
+        draw(ax)
+        ax.axis("off")
+        fig.subplots_adjust(0.02, 0.04, 0.98, 0.96)
+        fig.savefig(OUT / f"mini_{name}.png", dpi=200, facecolor=card)
+        plt.close(fig)
+
+    d = load_cycle("P012_F01_C4")
+    v = d["vib"]["X Driving axle +Z"]
+    nb = 2000
+    vv = v[: len(v) // nb * nb].reshape(-1, nb)
+    mini("raw", lambda ax: ax.fill_between(np.arange(len(vv)), vv.min(1), vv.max(1), color=INK, lw=0))
+
+    def cutting(ax):
+        t, cut = d["t_cur"], d["cutting_cur"]
+        edges = np.flatnonzero(np.diff(np.r_[0, cut.astype(int), 0]))
+        for s, e in zip(t[edges[::2]], t[np.minimum(edges[1::2], len(t) - 1)]):
+            if e - s > 2:
+                ax.axvspan(s, e, color=BLUE, alpha=0.18, lw=0)
+        ax.plot(t, d["spindle"], color=INK, lw=1.4)
+        ax.set_ylim(0, 8.5)
+    mini("cutting", cutting)
+
+    def spectrum(ax):
+        f, p = welch(v[d["cutting_vib"]], fs=25000, nperseg=8192)
+        keep = f <= 1150
+        for k in range(1, 6):
+            ax.axvline(k * 3200 / 60 * 4, color=BLUE, lw=2.2, alpha=0.55)
+        ax.plot(f[keep], np.log10(p[keep]), color=INK, lw=1.3)
+    mini("spectrum", spectrum)
+
+    ph = pd.read_parquet(ROOT / "data" / "processed" / "rzeszow_physics.parquet")
+    g = ph[ph.tool == 8].sort_values("age").drop_duplicates("age")
+    rel = [c for fam in FAMILIES for c in fam if f"{c}__rel" in g]
+
+    def numbers(ax):
+        row = g.iloc[-3]
+        x, pos = [], 0
+        for fam in FAMILIES:
+            for c in fam:
+                x.append(pos)
+                pos += 1
+            pos += 0.9
+        vals = [np.log(row[f"{c}__rel"]) if f"{c}__rel" in g else (row[c] - ph[c].mean()) / ph[c].std() / 3
+                for fam in FAMILIES for c in fam]
+        ax.bar(x, vals, width=0.72, color=BLUE)
+        ax.axhline(0, color=INK, lw=1.2)
+    mini("numbers", numbers)
+
+    def relative(ax):
+        ax.axhline(1, color=INK, lw=1.2, ls=(0, (4, 3)))
+        ax.plot(g.age, g["table_cut_a__rel"], color=BLUE, lw=2.2)
+        ax.plot(g.age[:3], g["table_cut_a__rel"][:3], "o", color=INK, ms=6)
+    mini("relative", relative)
+
+    def rows(ax):
+        m = np.log(g[[f"{c}__rel" for c in rel]].to_numpy().clip(1e-3))
+        cmap = LinearSegmentedColormap.from_list("b", [card, BLUE, "#123F75"])
+        ax.imshow(m.clip(0, 1.2), aspect="auto", cmap=cmap, vmin=0, vmax=1.2, interpolation="nearest")
+    mini("rows", rows)
+
+    p = pd.read_parquet(ROOT / "results" / "predictions" / "history_physics.parquet")
+    row = p[(p.tool == 103) & (p.run_idx == 30)].iloc[0]
+    hc = sorted([x for x in p.columns if x.startswith("hazard_")], key=lambda s: int(s.split("_")[1]))
+    h = row[hc].to_numpy(float)
+    pk = h * np.cumprod(np.r_[1, 1 - h[:-1]])
+
+    def risk(ax):
+        ax.bar(np.arange(1, len(pk) + 1), pk, width=0.8, color=BLUE)
+        ax.axhline(0, color=INK, lw=1.2)
+    mini("risk", risk, size=(6.0, 1.8))
+
+
 if __name__ == "__main__":
-    for f in (lives, one_cycle, features, tcn_diagram, loco_grid, splits, results, replay, decisions, risk_curves):
+    for f in (lives, one_cycle, features, tcn_diagram, loco_grid, splits, results, replay, decisions, risk_curves, minis):
         f()
     print("written to", OUT)
