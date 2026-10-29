@@ -225,6 +225,7 @@ def replay():
     ax.text(59.3, 92, "broke at 60", ha="right", va="top", fontsize=12.5, color=ORANGE)
     ax.set_xlabel("cycle")
     ax.set_ylabel("cycles left")
+    ax.set_title("cutter 103, never seen in training", loc="left")
     ax.set_ylim(0, 100)
     ax.legend(frameon=False, loc="lower left", fontsize=12.5)
     save(fig, "replay103.png")
@@ -288,46 +289,85 @@ FAMILIES = [  # the TCN's 22 physics inputs, in the four families the deck names
 ]
 
 
-def minis():
-    """Small text-free plots that sit inside the deck's flowchart boxes (one real cycle, cutter 8)."""
-    from matplotlib.colors import LinearSegmentedColormap
+FAMILY_NAMES = ["load", "vibration", "rhythm", "impacts"]
+
+
+def family_bars(ax, values):
+    """22 bars in the four families, with the family names as the x labels (every other one a line lower)."""
+    x, centres, pos = [], [], 0
+    for fam in FAMILIES:
+        start = pos
+        for _ in fam:
+            x.append(pos)
+            pos += 1
+        centres.append((start + pos - 1) / 2)
+        pos += 0.9
+    ax.bar(x, values, width=0.72, color=BLUE)
+    ax.axhline(0, color=INK, lw=1.0)
+    ax.set_xticks(centres, [n if i % 2 == 0 else "\n" + n for i, n in enumerate(FAMILY_NAMES)])
+    ax.tick_params(axis="x", length=0)
+    ax.grid(axis="x", visible=False)
+
+
+def cutting_spans(d):
+    t, cut = d["t_cur"], d["cutting_cur"]
+    edges = np.flatnonzero(np.diff(np.r_[0, cut.astype(int), 0]))
+    return [(s, e) for s, e in zip(t[edges[::2]], t[np.minimum(edges[1::2], len(t) - 1)]) if e - s > 2]
+
+
+def vib_envelope(d, nb=2000):
+    v = d["vib"]["X Driving axle +Z"]
+    tv = np.arange(len(v)) * 4e-5 + d["t_cur"][0]
+    n = len(v) // nb * nb
+    vv, tb = v[:n].reshape(-1, nb), tv[:n].reshape(-1, nb).mean(1)
+    return tb, vv.min(1), vv.max(1)
+
+
+def tooth_spectrum(d):
     from scipy.signal import welch
+    f, p = welch(d["vib"]["X Driving axle +Z"][d["cutting_vib"]], fs=25000, nperseg=8192)
+    keep = f <= 1150
+    return f[keep], np.log10(p[keep])
+
+
+def minis():
+    """Small labelled plots that sit inside the deck's flowchart boxes (one real cycle, cutter 8)."""
+    from matplotlib.colors import LinearSegmentedColormap
 
     card = "#FFFFFF"
 
-    def mini(name, draw, size=(4.48, 2.0)):
+    def mini(name, draw, xlabel, ylabel, size=(4.48, 2.24)):
         fig, ax = plt.subplots(figsize=size)
         fig.patch.set_facecolor(card)
         ax.set_facecolor(card)
         draw(ax)
-        ax.axis("off")
-        fig.subplots_adjust(0.02, 0.04, 0.98, 0.96)
+        ax.set_xlabel(xlabel, fontsize=13, labelpad=2)
+        ax.set_ylabel(ylabel, fontsize=13, labelpad=3)
+        ax.tick_params(labelsize=11.5, length=3, pad=2)
+        fig.tight_layout(pad=0.3)
         fig.savefig(OUT / f"mini_{name}.png", dpi=200, facecolor=card)
         plt.close(fig)
 
     d = load_cycle("P012_F01_C4")
-    v = d["vib"]["X Driving axle +Z"]
-    nb = 2000
-    vv = v[: len(v) // nb * nb].reshape(-1, nb)
-    mini("raw", lambda ax: ax.fill_between(np.arange(len(vv)), vv.min(1), vv.max(1), color=INK, lw=0))
+    tb, lo, hi = vib_envelope(d)
+    mini("raw", lambda ax: ax.fill_between(tb, lo, hi, color=INK, lw=0), "time (s)", "vibration (m/s²)")
 
     def cutting(ax):
-        t, cut = d["t_cur"], d["cutting_cur"]
-        edges = np.flatnonzero(np.diff(np.r_[0, cut.astype(int), 0]))
-        for s, e in zip(t[edges[::2]], t[np.minimum(edges[1::2], len(t) - 1)]):
-            if e - s > 2:
-                ax.axvspan(s, e, color=BLUE, alpha=0.18, lw=0)
-        ax.plot(t, d["spindle"], color=INK, lw=1.4)
+        spans = cutting_spans(d)
+        for s, e in spans:
+            ax.axvspan(s, e, color=BLUE, alpha=0.18, lw=0)
+        ax.plot(d["t_cur"], d["spindle"], color=INK, lw=1.4)
+        ax.text(np.mean(spans[0]), 7.4, "cutting", ha="center", fontsize=12, color=BLUE)
         ax.set_ylim(0, 8.5)
-    mini("cutting", cutting)
+    mini("cutting", cutting, "time (s)", "spindle current (A)")
 
     def spectrum(ax):
-        f, p = welch(v[d["cutting_vib"]], fs=25000, nperseg=8192)
-        keep = f <= 1150
+        f, lp = tooth_spectrum(d)
         for k in range(1, 6):
-            ax.axvline(k * 3200 / 60 * 4, color=BLUE, lw=2.2, alpha=0.55)
-        ax.plot(f[keep], np.log10(p[keep]), color=INK, lw=1.3)
-    mini("spectrum", spectrum)
+            ax.axvline(k * 3200 / 60 * 4, color=BLUE, lw=2.0, alpha=0.55)
+        ax.plot(f, lp, color=INK, lw=1.2)
+        ax.text(3200 / 60 * 4 + 25, lp.max() - 0.2, "tooth hits", fontsize=12, color=BLUE, va="top")
+    mini("spectrum", spectrum, "frequency (Hz)", "log power")
 
     ph = pd.read_parquet(ROOT / "data" / "processed" / "rzeszow_physics.parquet")
     g = ph[ph.tool == 8].sort_values("age").drop_duplicates("age")
@@ -335,29 +375,24 @@ def minis():
 
     def numbers(ax):
         row = g.iloc[-3]
-        x, pos = [], 0
-        for fam in FAMILIES:
-            for c in fam:
-                x.append(pos)
-                pos += 1
-            pos += 0.9
-        vals = [np.log(row[f"{c}__rel"]) if f"{c}__rel" in g else (row[c] - ph[c].mean()) / ph[c].std() / 3
-                for fam in FAMILIES for c in fam]
-        ax.bar(x, vals, width=0.72, color=BLUE)
-        ax.axhline(0, color=INK, lw=1.2)
-    mini("numbers", numbers)
+        family_bars(ax, [(row[c] - ph[c].mean()) / ph[c].std() for fam in FAMILIES for c in fam])
+    mini("numbers", numbers, "", "vs. average\n(std. devs)")
 
     def relative(ax):
         ax.axhline(1, color=INK, lw=1.2, ls=(0, (4, 3)))
-        ax.plot(g.age, g["table_cut_a__rel"], color=BLUE, lw=2.2)
-        ax.plot(g.age[:3], g["table_cut_a__rel"][:3], "o", color=INK, ms=6)
-    mini("relative", relative)
+        ax.plot(g.age + 1, g["table_cut_a__rel"], color=BLUE, lw=2.2)
+        ax.plot(g.age[:3] + 1, g["table_cut_a__rel"][:3], "o", color=INK, ms=6)
+        ax.annotate("first 3 cycles", xy=(3, 1.0), xytext=(8, 1.42), fontsize=12, color=INK, va="center",
+                    arrowprops=dict(arrowstyle="-", color=INK, lw=0.8))
+    mini("relative", relative, "cycle", "table current\n÷ first 3")
 
     def rows(ax):
         m = np.log(g[[f"{c}__rel" for c in rel]].to_numpy().clip(1e-3))
         cmap = LinearSegmentedColormap.from_list("b", [card, BLUE, "#123F75"])
-        ax.imshow(m.clip(0, 1.2), aspect="auto", cmap=cmap, vmin=0, vmax=1.2, interpolation="nearest")
-    mini("rows", rows)
+        ax.imshow(m.clip(0, 1.2), aspect="auto", cmap=cmap, vmin=0, vmax=1.2, interpolation="nearest",
+                  extent=(0.5, len(rel) + 0.5, len(g) + 0.5, 0.5))
+        ax.grid(False)
+    mini("rows", rows, "feature", "cycle")
 
     p = pd.read_parquet(ROOT / "results" / "predictions" / "history_physics.parquet")
     row = p[(p.tool == 103) & (p.run_idx == 30)].iloc[0]
@@ -367,11 +402,142 @@ def minis():
 
     def risk(ax):
         ax.bar(np.arange(1, len(pk) + 1), pk, width=0.8, color=BLUE)
-        ax.axhline(0, color=INK, lw=1.2)
-    mini("risk", risk, size=(6.0, 1.8))
+        ax.axhline(0, color=INK, lw=1.0)
+        ax.set_xlim(0, len(pk) + 1)
+    mini("risk", risk, "cycles from now", "P(break)", size=(5.6, 1.68))
+
+
+def demo():
+    """One unseen cutter (103) at cycle 47, through every step from raw recording to the decision.
+
+    One labelled plot per flowchart card; the card's heading and sentence on the slide say what the step
+    does. Numbers come from the saved results: the predictions of scripts/13 and the india_typical replay
+    of scripts/07 (g = ₹103.2 from the 12 training cutters; keep ₹3,229 vs change ₹3,133 at cycle 47)."""
+    from matplotlib.colors import LinearSegmentedColormap
+
+    card = "#FFFFFF"
+
+    def node(i, draw, xlabel, ylabel, bg=card):
+        fig = plt.figure(figsize=(2.86, 1.70))
+        fig.patch.set_facecolor(bg)
+        ax = fig.add_axes((0.28, 0.31, 0.68, 0.64))
+        ax.set_facecolor(bg)
+        draw(ax)
+        ax.set_xlabel(xlabel, fontsize=12.5, labelpad=2)
+        ax.set_ylabel(ylabel, fontsize=12.5, labelpad=3)
+        ax.tick_params(labelsize=11, length=3, pad=2)
+        fig.savefig(OUT / f"demo_{i:02d}.png", dpi=200, facecolor=bg)
+        plt.close(fig)
+
+    d = load_cycle("P036_F01_C6")  # cutter 103, cycle 47
+    ph = pd.read_parquet(ROOT / "data" / "processed" / "rzeszow_physics.parquet")
+    c103 = ph[ph.tool == 103].sort_values("age").drop_duplicates("age")
+    now = c103[c103.age == 46].iloc[0]
+
+    tb, lo, hi = vib_envelope(d)
+    node(1, lambda ax: ax.fill_between(tb, lo, hi, color=INK, lw=0), "time (s)", "vibration\n(m/s²)")
+
+    def cutting(ax):
+        spans = cutting_spans(d)
+        for s, e in spans:
+            ax.axvspan(s, e, color=BLUE, alpha=0.18, lw=0)
+        ax.plot(d["t_cur"], d["spindle"], color=INK, lw=1.2)
+        ax.text(np.mean(spans[0]), 7.0, "cutting", ha="center", fontsize=11.5, color=BLUE)
+        ax.set_ylim(0, 8.5)
+    node(2, cutting, "time (s)", "spindle\ncurrent (A)")
+
+    def spectrum(ax):
+        f, lp = tooth_spectrum(d)
+        for k in range(1, 6):
+            ax.axvline(k * 3200 / 60 * 4, color=BLUE, lw=1.8, alpha=0.55)
+        ax.plot(f, lp, color=INK, lw=1.1)
+        ax.set_xticks([0, 500, 1000])
+    node(3, spectrum, "frequency (Hz)", "log power")
+
+    node(4, lambda ax: family_bars(ax, [(now[c] - ph[c].mean()) / ph[c].std() for fam in FAMILIES for c in fam]),
+         "", "vs. average\n(std. devs)")
+
+    def relative(ax):
+        col = "Spindle_mX__hiband_rms__rel"
+        ax.axhline(1, color=INK, lw=1.0, ls=(0, (4, 3)))
+        ax.plot(c103.age[:47] + 1, c103[col][:47], color=BLUE, lw=2.0)
+        ax.plot(c103.age[:3] + 1, c103[col][:3], "o", color=INK, ms=4.5)
+        ax.text(2, 1.24, f"now: {now[col]:.2f}×", va="center", fontsize=11.5, color=BLUE)
+    node(5, relative, "cycle", "spindle vib.\n÷ first 3")
+
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import importlib
+    th = importlib.import_module("13_train_history")
+    df, cols = th.load("physics")
+    z = (df[cols] - df[cols].mean()) / df[cols].std().replace(0, 1)
+    seq = z[df.tool == 103].iloc[:47].to_numpy()
+
+    def inputs(ax):
+        cmap = LinearSegmentedColormap.from_list("d", [ORANGE, card, BLUE])
+        ax.imshow(seq.clip(-2.5, 2.5), aspect="auto", cmap=cmap, vmin=-2.5, vmax=2.5, interpolation="nearest",
+                  extent=(0.5, len(cols) + 0.5, 47.5, 0.5))
+        ax.grid(False)
+    node(6, inputs, f"input (1–{len(cols)})", "cycle")
+
+    def cone(ax):
+        n, ys = 16, {1: 1, 2: 2, 4: 3, 8: 4}
+        need = {n - 1}
+        for dil in (8, 4, 2, 1):
+            y = ys[dil]
+            ax.plot(range(n), [y] * n, "o", color=GRID, ms=3)
+            for tau in need:
+                for k in (0, 1, 2):
+                    if tau - k * dil >= 0:
+                        ax.plot([tau, tau - k * dil], [y, y - 1], color=BLUE, lw=0.9)
+                ax.plot(tau, y, "o", color=BLUE, ms=4)
+            need = {tau - k * dil for tau in need for k in (0, 1, 2) if tau - k * dil >= 0}
+        ax.plot(range(n), [0] * n, "s", color=INK2, ms=3.5)
+        ax.set_yticks([0, 1, 2, 3, 4], ["input", "1", "2", "4", "8"])
+        ax.set_xticks([0, n - 1], ["past", "now"])
+        ax.grid(False)
+        ax.set_ylim(-0.5, 4.5)
+    node(7, cone, "cycles", "layer gap")
+
+    p = pd.read_parquet(ROOT / "results" / "predictions" / "history_physics.parquet")
+    g = p[p.tool == 103].sort_values("run_idx")
+    hc = sorted([x for x in p.columns if x.startswith("hazard_")], key=lambda s: int(s.split("_")[1]))
+    h = g[g.run_idx == 46].iloc[0][hc].to_numpy(float)
+    pk = h * np.cumprod(np.r_[1, 1 - h[:-1]])
+
+    def risk(ax):
+        ax.bar(np.arange(1, 21), pk[:20], width=0.8, color=BLUE)
+        ax.axvline(13, color=ORANGE, lw=1.6, ls="--")
+        ax.text(13.6, pk.max() * 0.95, "broke\n13 later", fontsize=11, color=ORANGE, va="top")
+        ax.set_xlim(0, 21)
+    node(8, risk, "cycles from now", "chance of\nbreaking")
+
+    def costs(ax):
+        vals = [("keep", 3229, ORANGE), ("change", 3133, BLUE)]
+        for y, (lab, v, col) in enumerate(vals):
+            ax.plot([3000, v], [y, y], color=col, lw=2.0)
+            ax.plot(v, y, "o", color=col, ms=7)
+            ax.text(v + 12, y, f"₹{v:,}", va="center", fontsize=11.5, color=INK)
+        ax.set_yticks([0, 1], [v[0] for v in vals])
+        ax.set_ylim(1.6, -0.6)
+        ax.set_xlim(3000, 3360)
+        ax.set_xticks([3000, 3100, 3200, 3300])
+        ax.grid(axis="y", visible=False)
+    node(9, costs, "expected cost (₹)", "")
+
+    def replay_mini(ax):
+        x = g.run_idx + 1
+        ax.plot(x, g.rul, color=INK, lw=1.6, label="true")
+        ax.plot(x, g.rul_q50, color=BLUE, lw=1.6, label="predicted")
+        ax.axvline(47, color=BLUE, lw=1.6)
+        ax.axvline(60, color=ORANGE, lw=1.4, ls="--")
+        ax.text(45.5, 98, "change at 47", ha="right", va="top", fontsize=11, color=BLUE)
+        ax.text(45.5, 84, "broke at 60", ha="right", va="top", fontsize=11, color=ORANGE)
+        ax.set_ylim(0, 100)
+        ax.legend(frameon=False, loc="lower left", fontsize=10.5, handlelength=1.2, borderaxespad=0.1)
+    node(10, replay_mini, "cycle", "cycles left", bg="#FBE6DC")
 
 
 if __name__ == "__main__":
-    for f in (lives, one_cycle, features, tcn_diagram, loco_grid, splits, results, replay, decisions, risk_curves, minis):
+    for f in (lives, one_cycle, features, tcn_diagram, loco_grid, splits, results, replay, decisions, risk_curves, minis, demo):
         f()
     print("written to", OUT)
